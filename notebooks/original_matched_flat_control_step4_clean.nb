@@ -1,0 +1,3550 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* CreatedBy='Wolfram 14.3' *)
+(* Cleaned for GitHub: output/print cells and notebook cache removed. *)
+
+Notebook[{
+Cell["\<\
+Original matched-flat control for black-hole graph diagnostics\
+\>", "Title"],
+
+Cell["\<\
+This notebook uses the original matched-flat convention: radius-threshold \
+graph for the curved embedding, direct kNN graph for the matched-flat \
+projection. Run cells top to bottom. Use maxRefsPerBin = 5 only for smoke \
+tests; use All for final runs.\
+\>", "Text"],
+
+Cell["0. Clean settings", "Section"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"ClearAll", "[", "\"\<Global`*\>\"", "]"}], ";"}], "\n", "\n", 
+  RowBox[{"(*", " ", 
+   RowBox[{"--", 
+    RowBox[{"--", 
+     RowBox[{"--", 
+      RowBox[{"--", 
+       RowBox[{"--", 
+        RowBox[{"--", 
+         RowBox[{"--", 
+          RowBox[{"--", 
+           RowBox[{"--", 
+            RowBox[{"--", 
+             RowBox[{"--", 
+              RowBox[{"--", 
+               RowBox[{"--", 
+                RowBox[{"--", "-"}]}]}]}]}]}]}]}]}]}]}]}]}]}], " ", "*)"}], 
+  "\n", 
+  RowBox[{"(*", " ", 
+   RowBox[{"Main", " ", "run", " ", "settings"}], "             ", "*)"}], 
+  "\n", 
+  RowBox[{"(*", " ", 
+   RowBox[{"--", 
+    RowBox[{"--", 
+     RowBox[{"--", 
+      RowBox[{"--", 
+       RowBox[{"--", 
+        RowBox[{"--", 
+         RowBox[{"--", 
+          RowBox[{"--", 
+           RowBox[{"--", 
+            RowBox[{"--", 
+             RowBox[{"--", 
+              RowBox[{"--", 
+               RowBox[{"--", 
+                RowBox[{"--", "-"}]}]}]}]}]}]}]}]}]}]}]}]}]}], " ", "*)"}], 
+  "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"M", " ", "=", " ", "1.0"}], ";"}], "\n", "\n", 
+  RowBox[{"(*", " ", 
+   RowBox[{"Current", "-", 
+    RowBox[{
+    "scale", " ", "version", " ", "used", " ", "in", " ", "the", " ", "new", " ",
+      "Step", " ", "4", " ", 
+     RowBox[{"work", "."}]}]}], " ", "*)"}]}], "\n", 
+ RowBox[{
+  RowBox[{"rMin", " ", "=", " ", "2.2"}], ";"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"rMax", " ", "=", " ", "12.0"}], ";"}], "\n", "\n", 
+  RowBox[{"(*", " ", 
+   RowBox[{
+    RowBox[{"Old", "-", 
+     RowBox[{"paper", " ", "scale"}]}], ",", " ", 
+    RowBox[{
+     RowBox[{
+     "if", " ", "you", " ", "want", " ", "to", " ", "reproduce", " ", "the", " ",
+       "old", " ", "Flamm"}], "-", 
+     RowBox[{"only", " ", "experiment", " ", 
+      RowBox[{"exactly", "."}]}]}]}], " ", "*)"}], "\n", 
+  RowBox[{"(*", " ", 
+   RowBox[{
+    RowBox[{"M", " ", "=", " ", 
+     RowBox[{"1", "/", "2"}]}], ";", " ", 
+    RowBox[{"rMin", " ", "=", " ", "1.05"}], ";", " ", 
+    RowBox[{"rMax", " ", "=", " ", "5.0"}], ";"}], " ", "*)"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{"nSamples", " ", "=", " ", "1000"}], ";"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"randomSeed", " ", "=", " ", "1234"}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{"kNN", " ", "=", " ", "16"}], ";"}], "\n", 
+ RowBox[{
+  RowBox[{"epsilonFactor", " ", "=", " ", "1.15"}], ";"}], "\n", 
+ RowBox[{
+  RowBox[{"fixedGraphShellRadius", " ", "=", " ", "3"}], ";"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"nRadialBins", " ", "=", " ", "12"}], ";"}], "\n", "\n", 
+  RowBox[{"(*", " ", 
+   RowBox[{"Use", " ", "All", " ", "for", " ", "the", " ", "real", " ", 
+    RowBox[{"run", ".", " ", "Use"}], " ", "5", " ", "or", " ", "10", " ", 
+    "only", " ", "for", " ", "a", " ", "smoke", " ", 
+    RowBox[{"test", "."}]}], " ", "*)"}]}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"maxRefsPerBin", " ", "=", " ", "All"}], ";"}], "\n", 
+  RowBox[{"(*", " ", 
+   RowBox[{
+    RowBox[{"maxRefsPerBin", " ", "=", " ", "5"}], ";"}], " ", "*)"}], 
+  "\n"}], "\n", 
+ RowBox[{
+  RowBox[{"qRN", " ", "=", " ", "0.5"}], ";"}], "\n", 
+ RowBox[{
+  RowBox[{"gBardeen", " ", "=", " ", "0.5"}], ";"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"lHayward", " ", "=", " ", "0.5"}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"runTag", " ", "=", " ", 
+    RowBox[{"\"\<originalMatchedFlatControl_randomN\>\"", " ", "<>", " ", 
+     RowBox[{"ToString", "[", "nSamples", "]"}], " ", "<>", "\n", 
+     "  ", "\"\<_k\>\"", " ", "<>", " ", 
+     RowBox[{"ToString", "[", "kNN", "]"}], " ", "<>", "\n", 
+     "  ", "\"\<_epsFactor\>\"", " ", "<>", " ", 
+     RowBox[{"StringReplace", "[", 
+      RowBox[{
+       RowBox[{"ToString", "[", "epsilonFactor", "]"}], ",", " ", 
+       RowBox[{"\"\<.\>\"", " ", "->", " ", "\"\<p\>\""}]}], "]"}], " ", "<>",
+      "\n", "  ", "\"\<_rg\>\"", " ", "<>", " ", 
+     RowBox[{"ToString", "[", "fixedGraphShellRadius", "]"}]}]}], ";"}], 
+  "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"baseDir", " ", "=", " ", 
+    RowBox[{"If", "[", 
+     RowBox[{"$Notebooks", ",", " ", 
+      RowBox[{"NotebookDirectory", "[", "]"}], ",", " ", 
+      RowBox[{"Directory", "[", "]"}]}], "]"}]}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{"outputDir", " ", "=", " ", 
+   RowBox[{"FileNameJoin", "[", 
+    RowBox[{"{", 
+     RowBox[{"baseDir", ",", " ", 
+      RowBox[{"\"\<step4_outputs_\>\"", " ", "<>", " ", "runTag"}]}], "}"}], 
+    "]"}]}], ";"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"checkpointDir", " ", "=", " ", 
+    RowBox[{"FileNameJoin", "[", 
+     RowBox[{"{", 
+      RowBox[{"baseDir", ",", " ", 
+       RowBox[{"\"\<step4_checkpoints_\>\"", " ", "<>", " ", "runTag"}]}], 
+      "}"}], "]"}]}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{"If", "[", 
+   RowBox[{
+    RowBox[{"!", " ", 
+     RowBox[{"DirectoryQ", "[", "outputDir", "]"}]}], ",", " ", 
+    RowBox[{"CreateDirectory", "[", "outputDir", "]"}]}], "]"}], ";"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"If", "[", 
+    RowBox[{
+     RowBox[{"!", " ", 
+      RowBox[{"DirectoryQ", "[", "checkpointDir", "]"}]}], ",", " ", 
+     RowBox[{"CreateDirectory", "[", "checkpointDir", "]"}]}], "]"}], ";"}], 
+  "\n"}], "\n", "runTag", "\n"}], "Input"],
+
+Cell["1. Metric functions", "Section"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"ClearAll", "[", "\n", "  ", 
+    RowBox[{
+    "fSchwarzschild", ",", "\n", "  ", "fRN", ",", "\n", "  ", "mBardeen", ",",
+      "\n", "  ", "fBardeen", ",", "\n", "  ", "mHayward", ",", "\n", "  ", 
+     "fHayward"}], "\n", "]"}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"fSchwarzschild", "[", 
+     RowBox[{"r_", "?", "NumericQ"}], "]"}], " ", ":=", " ", 
+    RowBox[{"1", " ", "-", " ", 
+     RowBox[{"2", " ", 
+      RowBox[{"M", "/", "r"}]}]}]}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"fRN", "[", 
+     RowBox[{"r_", "?", "NumericQ"}], "]"}], " ", ":=", " ", 
+    RowBox[{"1", " ", "-", " ", 
+     RowBox[{"2", " ", 
+      RowBox[{"M", "/", "r"}]}], " ", "+", " ", 
+     RowBox[{
+      RowBox[{"qRN", "^", "2"}], "/", 
+      RowBox[{"r", "^", "2"}]}]}]}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"mBardeen", "[", 
+    RowBox[{"r_", "?", "NumericQ"}], "]"}], " ", ":=", " ", 
+   RowBox[{"M", " ", 
+    RowBox[{
+     RowBox[{"r", "^", "3"}], "/", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{
+        RowBox[{"r", "^", "2"}], " ", "+", " ", 
+        RowBox[{"gBardeen", "^", "2"}]}], ")"}], "^", 
+      RowBox[{"(", 
+       RowBox[{"3", "/", "2"}], ")"}]}]}]}]}], ";"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"fBardeen", "[", 
+     RowBox[{"r_", "?", "NumericQ"}], "]"}], " ", ":=", " ", 
+    RowBox[{"1", " ", "-", " ", 
+     RowBox[{"2", " ", 
+      RowBox[{
+       RowBox[{"mBardeen", "[", "r", "]"}], "/", "r"}]}]}]}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"mHayward", "[", 
+    RowBox[{"r_", "?", "NumericQ"}], "]"}], " ", ":=", " ", 
+   RowBox[{"M", " ", 
+    RowBox[{
+     RowBox[{"r", "^", "3"}], "/", 
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{"r", "^", "3"}], " ", "+", " ", 
+       RowBox[{"2", " ", "M", " ", 
+        RowBox[{"lHayward", "^", "2"}]}]}], ")"}]}]}]}], ";"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"fHayward", "[", 
+    RowBox[{"r_", "?", "NumericQ"}], "]"}], " ", ":=", " ", 
+   RowBox[{"1", " ", "-", " ", 
+    RowBox[{"2", " ", 
+     RowBox[{
+      RowBox[{"mHayward", "[", "r", "]"}], "/", "r"}]}]}]}], 
+  ";"}], "\n"}], "Input"],
+
+Cell["2. Embedding and sampling utilities", "Section"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"ClearAll", "[", "\n", "  ", 
+    RowBox[{
+    "safeZPrime", ",", "\n", "  ", "makeZInterpolation", ",", "\n", "  ", 
+     "makeRandomRPhiList", ",", "\n", "  ", "makeGridRPhiList"}], "\n", "]"}],
+    ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{
+     RowBox[{"safeZPrime", "[", "f_", "]"}], "[", 
+     RowBox[{"r_", "?", "NumericQ"}], "]"}], " ", ":=", " ", 
+    RowBox[{"Module", "[", 
+     RowBox[{
+      RowBox[{"{", "fr", "}"}], ",", "\n", "  ", 
+      RowBox[{
+       RowBox[{"fr", " ", "=", " ", 
+        RowBox[{"f", "[", "r", "]"}]}], ";", "\n", "  ", 
+       RowBox[{"If", "[", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"NumericQ", "[", "fr", "]"}], " ", "&&", " ", 
+          RowBox[{"fr", " ", ">", " ", "0"}]}], ",", "\n", "    ", 
+         RowBox[{"Sqrt", "[", 
+          RowBox[{"Max", "[", 
+           RowBox[{"0", ",", " ", 
+            RowBox[{
+             RowBox[{"1", "/", "fr"}], " ", "-", " ", "1"}]}], "]"}], "]"}], ",",
+          "\n", "    ", "0"}], "\n", "  ", "]"}]}]}], "\n", "]"}]}], ";"}], 
+  "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"makeZInterpolation", "[", 
+     RowBox[{"f_", ",", " ", "rmin_", ",", " ", "rmax_", ",", " ", 
+      RowBox[{"nGrid_", ":", " ", "3000"}]}], "]"}], " ", ":=", " ", 
+    RowBox[{"Module", "[", "\n", "  ", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{
+       "rs", ",", " ", "vals", ",", " ", "increments", ",", " ", "zs"}], 
+       "}"}], ",", "\n", "  ", 
+      RowBox[{
+       RowBox[{"rs", " ", "=", " ", 
+        RowBox[{"N", " ", "@", " ", 
+         RowBox[{"Subdivide", "[", 
+          RowBox[{"rmin", ",", " ", "rmax", ",", " ", "nGrid"}], "]"}]}]}], ";",
+        "\n", "  ", 
+       RowBox[{"vals", " ", "=", " ", 
+        RowBox[{
+         RowBox[{"safeZPrime", "[", "f", "]"}], " ", "/@", " ", "rs"}]}], ";",
+        "\n", "  ", 
+       RowBox[{"increments", " ", "=", " ", 
+        RowBox[{
+         RowBox[{"Differences", "[", "rs", "]"}], " ", "*", " ", 
+         RowBox[{"MovingAverage", "[", 
+          RowBox[{"vals", ",", " ", "2"}], "]"}]}]}], ";", "\n", "  ", 
+       RowBox[{"zs", " ", "=", " ", 
+        RowBox[{"Prepend", "[", 
+         RowBox[{
+          RowBox[{"Accumulate", "[", "increments", "]"}], ",", " ", "0"}], 
+         "]"}]}], ";", "\n", "  ", 
+       RowBox[{"Interpolation", "[", 
+        RowBox[{
+         RowBox[{"Transpose", "[", 
+          RowBox[{"{", 
+           RowBox[{"rs", ",", " ", "zs"}], "}"}], "]"}], ",", " ", 
+         RowBox[{"InterpolationOrder", " ", "->", " ", "1"}]}], "]"}]}]}], 
+     "\n", "]"}]}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"makeRandomRPhiList", "[", 
+     RowBox[{"n_Integer", ",", " ", "rmin_", ",", " ", "rmax_", ",", " ", 
+      RowBox[{"seed_Integer", ":", " ", "1234"}]}], "]"}], " ", ":=", " ", 
+    RowBox[{"Module", "[", "\n", "  ", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"rs", ",", " ", "phis"}], "}"}], ",", "\n", "  ", 
+      RowBox[{
+       RowBox[{"SeedRandom", "[", "seed", "]"}], ";", "\n", "  ", 
+       RowBox[{"rs", " ", "=", " ", 
+        RowBox[{"RandomReal", "[", 
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{"rmin", ",", " ", "rmax"}], "}"}], ",", " ", "n"}], 
+         "]"}]}], ";", "\n", "  ", 
+       RowBox[{"phis", " ", "=", " ", 
+        RowBox[{"RandomReal", "[", 
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{"0", ",", " ", 
+            RowBox[{"2", " ", "Pi"}]}], "}"}], ",", " ", "n"}], "]"}]}], ";", 
+       "\n", "  ", 
+       RowBox[{"Transpose", "[", 
+        RowBox[{"{", 
+         RowBox[{"rs", ",", " ", "phis"}], "}"}], "]"}]}]}], "\n", "]"}]}], 
+   ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"makeGridRPhiList", "[", 
+    RowBox[{
+    "nR_Integer", ",", " ", "nPhi_Integer", ",", " ", "rmin_", ",", " ", 
+     "rmax_"}], "]"}], " ", ":=", " ", 
+   RowBox[{"Module", "[", "\n", "  ", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"rs", ",", " ", "phis"}], "}"}], ",", "\n", "  ", 
+     RowBox[{
+      RowBox[{"rs", " ", "=", " ", 
+       RowBox[{"N", " ", "@", " ", 
+        RowBox[{"Subdivide", "[", 
+         RowBox[{"rmin", ",", " ", "rmax", ",", " ", 
+          RowBox[{"nR", " ", "-", " ", "1"}]}], "]"}]}]}], ";", "\n", "  ", 
+      RowBox[{"phis", " ", "=", " ", 
+       RowBox[{"N", " ", "@", " ", 
+        RowBox[{"Most", "[", 
+         RowBox[{"Subdivide", "[", 
+          RowBox[{"0", ",", " ", 
+           RowBox[{"2", " ", "Pi"}], ",", " ", "nPhi"}], "]"}], "]"}]}]}], ";",
+       "\n", "  ", 
+      RowBox[{"Flatten", "[", 
+       RowBox[{
+        RowBox[{"Table", "[", 
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{"r", ",", " ", "phi"}], "}"}], ",", " ", 
+          RowBox[{"{", 
+           RowBox[{"r", ",", " ", "rs"}], "}"}], ",", " ", 
+          RowBox[{"{", 
+           RowBox[{"phi", ",", " ", "phis"}], "}"}]}], "]"}], ",", " ", "1"}],
+        "]"}]}]}], "\n", "]"}]}], ";"}], "\n"}], "Input"],
+
+Cell["3. Original graph-construction protocol", "Section"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"ClearAll", "[", "\n", "  ", 
+    RowBox[{
+    "distanceMatrixRadius", ",", "\n", "  ", "makeGeometricGraph", ",", "\n", 
+     "  ", "makeKNNGraph", ",", "\n", "  ", "makeSurfaceDataFromRPhi", ",", 
+     "\n", "  ", "makeFlatMatchedDataOriginal"}], "\n", "]"}], ";"}], "\n", 
+  "\n", 
+  RowBox[{"(*", " ", 
+   RowBox[{
+    RowBox[{"Original", " ", "radius", " ", 
+     RowBox[{"rule", ":", " ", "epsilon"}]}], " ", "=", " ", 
+    RowBox[{"factor", " ", "*", " ", 
+     RowBox[{
+      RowBox[{"Median", "[", 
+       RowBox[{"k", "-", 
+        RowBox[{"th", " ", "neighbor", " ", "distance"}]}], "]"}], "."}]}]}], 
+   " ", "*)"}]}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"distanceMatrixRadius", "[", 
+     RowBox[{"pts_List", ",", " ", 
+      RowBox[{"k_Integer", ":", " ", "8"}], ",", " ", 
+      RowBox[{"factor_", ":", " ", "1.15"}]}], "]"}], " ", ":=", " ", 
+    RowBox[{"Module", "[", "\n", "  ", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"dm", ",", " ", "sortedRows", ",", " ", "kthDistances"}], 
+       "}"}], ",", "\n", "  ", 
+      RowBox[{
+       RowBox[{"dm", " ", "=", " ", 
+        RowBox[{"DistanceMatrix", "[", "pts", "]"}]}], ";", "\n", "  ", 
+       RowBox[{"sortedRows", " ", "=", " ", 
+        RowBox[{"Sort", " ", "/@", " ", "dm"}]}], ";", "\n", "  ", 
+       RowBox[{"(*", " ", 
+        RowBox[{
+         RowBox[{"First", " ", "distance", " ", "is", " ", "zero"}], ",", " ", 
+         RowBox[{
+          RowBox[{"the", " ", "point", " ", "itself"}], ";", " ", 
+          RowBox[{"k", "+", 
+           RowBox[{"1", " ", "gives", " ", "the", " ", "k"}], "-", 
+           RowBox[{"th", " ", "other", " ", 
+            RowBox[{"neighbor", "."}]}]}]}]}], " ", "*)"}], "\n", "  ", 
+       RowBox[{"kthDistances", " ", "=", " ", 
+        RowBox[{"sortedRows", "[", 
+         RowBox[{"[", 
+          RowBox[{"All", ",", " ", 
+           RowBox[{"Min", "[", 
+            RowBox[{
+             RowBox[{"k", " ", "+", " ", "1"}], ",", " ", 
+             RowBox[{"Length", "[", "pts", "]"}]}], "]"}]}], "]"}], "]"}]}], ";",
+        "\n", "  ", 
+       RowBox[{"N", "[", 
+        RowBox[{"factor", " ", "*", " ", 
+         RowBox[{"Median", "[", "kthDistances", "]"}]}], "]"}]}]}], "\n", 
+     "]"}]}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"makeGeometricGraph", "[", 
+     RowBox[{"pts_List", ",", " ", 
+      RowBox[{"eps_", "?", "NumericQ"}]}], "]"}], " ", ":=", " ", 
+    RowBox[{"Module", "[", "\n", "  ", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"n", ",", " ", "dm", ",", " ", "edges"}], "}"}], ",", "\n", 
+      "  ", 
+      RowBox[{
+       RowBox[{"n", " ", "=", " ", 
+        RowBox[{"Length", "[", "pts", "]"}]}], ";", "\n", "  ", 
+       RowBox[{"dm", " ", "=", " ", 
+        RowBox[{"DistanceMatrix", "[", "pts", "]"}]}], ";", "\n", "  ", 
+       RowBox[{"edges", " ", "=", " ", 
+        RowBox[{"Flatten", "[", "\n", "    ", 
+         RowBox[{
+          RowBox[{"Table", "[", "\n", "      ", 
+           RowBox[{
+            RowBox[{"If", "[", 
+             RowBox[{
+              RowBox[{
+               RowBox[{"i", " ", "<", " ", "j"}], " ", "&&", " ", 
+               RowBox[{
+                RowBox[{"dm", "[", 
+                 RowBox[{"[", 
+                  RowBox[{"i", ",", " ", "j"}], "]"}], "]"}], " ", "<=", " ", 
+                "eps"}]}], ",", "\n", "        ", 
+              RowBox[{"UndirectedEdge", "[", 
+               RowBox[{"i", ",", " ", "j"}], "]"}], ",", "\n", "        ", 
+              "Nothing"}], "\n", "      ", "]"}], ",", "\n", "      ", 
+            RowBox[{"{", 
+             RowBox[{"i", ",", " ", "n"}], "}"}], ",", " ", 
+            RowBox[{"{", 
+             RowBox[{"j", ",", " ", "n"}], "}"}]}], "\n", "    ", "]"}], ",", 
+          "\n", "    ", "1"}], "\n", "  ", "]"}]}], ";", "\n", "  ", 
+       RowBox[{"SimpleGraph", "[", 
+        RowBox[{"Graph", "[", 
+         RowBox[{
+          RowBox[{"Range", "[", "n", "]"}], ",", " ", "edges"}], "]"}], 
+        "]"}]}]}], "\n", "]"}]}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"makeKNNGraph", "[", 
+     RowBox[{"pts_List", ",", " ", "k_Integer"}], "]"}], " ", ":=", " ", 
+    RowBox[{"Module", "[", "\n", "  ", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{
+       "n", ",", " ", "nf", ",", " ", "pairs", ",", " ", "sortedPairs", ",", 
+        " ", "edges"}], "}"}], ",", "\n", "  ", 
+      RowBox[{
+       RowBox[{"n", " ", "=", " ", 
+        RowBox[{"Length", "[", "pts", "]"}]}], ";", "\n", "  ", 
+       RowBox[{"nf", " ", "=", " ", 
+        RowBox[{"Nearest", "[", 
+         RowBox[{"pts", " ", "->", " ", 
+          RowBox[{"Range", "[", "n", "]"}]}], "]"}]}], ";", "\n", "  ", 
+       RowBox[{"pairs", " ", "=", " ", 
+        RowBox[{"Flatten", "[", "\n", "    ", 
+         RowBox[{
+          RowBox[{"Table", "[", "\n", "      ", 
+           RowBox[{
+            RowBox[{"Thread", "[", 
+             RowBox[{"i", " ", "->", " ", 
+              RowBox[{"DeleteCases", "[", 
+               RowBox[{
+                RowBox[{"nf", "[", 
+                 RowBox[{
+                  RowBox[{"pts", "[", 
+                   RowBox[{"[", "i", "]"}], "]"}], ",", " ", 
+                  RowBox[{"k", " ", "+", " ", "1"}]}], "]"}], ",", " ", "i"}],
+                "]"}]}], "]"}], ",", "\n", "      ", 
+            RowBox[{"{", 
+             RowBox[{"i", ",", " ", "n"}], "}"}]}], "\n", "    ", "]"}], ",", 
+          "\n", "    ", "1"}], "\n", "  ", "]"}]}], ";", "\n", "  ", 
+       RowBox[{"sortedPairs", " ", "=", " ", 
+        RowBox[{"Sort", " ", "/@", " ", 
+         RowBox[{"(", 
+          RowBox[{"List", " ", "@@@", " ", "pairs"}], ")"}]}]}], ";", "\n", 
+       "  ", 
+       RowBox[{"edges", " ", "=", " ", 
+        RowBox[{"DeleteDuplicates", "[", 
+         RowBox[{"UndirectedEdge", " ", "@@@", " ", "sortedPairs"}], "]"}]}], 
+       ";", "\n", "  ", 
+       RowBox[{"SimpleGraph", "[", 
+        RowBox[{"Graph", "[", 
+         RowBox[{
+          RowBox[{"Range", "[", "n", "]"}], ",", " ", "edges"}], "]"}], 
+        "]"}]}]}], "\n", "]"}]}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"makeSurfaceDataFromRPhi", "[", 
+     RowBox[{"name_String", ",", " ", "f_", ",", " ", "rPhiList_List"}], 
+     "]"}], " ", ":=", " ", 
+    RowBox[{"Module", "[", "\n", "  ", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{
+       "zfun", ",", " ", "pts", ",", " ", "vertices", ",", " ", 
+        "radiusAssociation", ",", " ", "phiAssociation", ",", "\n", "   ", 
+        "coordinateAssociation", ",", " ", "eps", ",", " ", "graph"}], "}"}], 
+      ",", "\n", "\n", "  ", 
+      RowBox[{
+       RowBox[{"zfun", " ", "=", " ", 
+        RowBox[{"makeZInterpolation", "[", 
+         RowBox[{"f", ",", " ", "rMin", ",", " ", "rMax"}], "]"}]}], ";", 
+       "\n", "\n", "  ", 
+       RowBox[{"pts", " ", "=", " ", 
+        RowBox[{
+         RowBox[{"(", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{
+             RowBox[{
+              RowBox[{"#", "[", 
+               RowBox[{"[", "1", "]"}], "]"}], " ", 
+              RowBox[{"Cos", "[", 
+               RowBox[{"#", "[", 
+                RowBox[{"[", "2", "]"}], "]"}], "]"}]}], ",", " ", 
+             RowBox[{
+              RowBox[{"#", "[", 
+               RowBox[{"[", "1", "]"}], "]"}], " ", 
+              RowBox[{"Sin", "[", 
+               RowBox[{"#", "[", 
+                RowBox[{"[", "2", "]"}], "]"}], "]"}]}], ",", " ", 
+             RowBox[{"zfun", "[", 
+              RowBox[{"#", "[", 
+               RowBox[{"[", "1", "]"}], "]"}], "]"}]}], "}"}], " ", "&"}], 
+          ")"}], " ", "/@", " ", "rPhiList"}]}], ";", "\n", "\n", "  ", 
+       RowBox[{"vertices", " ", "=", " ", 
+        RowBox[{"Range", "[", 
+         RowBox[{"Length", "[", "pts", "]"}], "]"}]}], ";", "\n", "\n", "  ", 
+       RowBox[{"radiusAssociation", " ", "=", " ", 
+        RowBox[{"AssociationThread", "[", 
+         RowBox[{"vertices", " ", "->", " ", 
+          RowBox[{"N", "[", 
+           RowBox[{"rPhiList", "[", 
+            RowBox[{"[", 
+             RowBox[{"All", ",", " ", "1"}], "]"}], "]"}], "]"}]}], "]"}]}], ";",
+        "\n", "  ", 
+       RowBox[{"phiAssociation", " ", "=", " ", 
+        RowBox[{"AssociationThread", "[", 
+         RowBox[{"vertices", " ", "->", " ", 
+          RowBox[{"N", "[", 
+           RowBox[{"rPhiList", "[", 
+            RowBox[{"[", 
+             RowBox[{"All", ",", " ", "2"}], "]"}], "]"}], "]"}]}], "]"}]}], ";",
+        "\n", "  ", 
+       RowBox[{"coordinateAssociation", " ", "=", " ", 
+        RowBox[{"AssociationThread", "[", 
+         RowBox[{"vertices", " ", "->", " ", "pts"}], "]"}]}], ";", "\n", 
+       "\n", "  ", 
+       RowBox[{"eps", " ", "=", " ", 
+        RowBox[{"distanceMatrixRadius", "[", 
+         RowBox[{"pts", ",", " ", "kNN", ",", " ", "epsilonFactor"}], "]"}]}],
+        ";", "\n", "  ", 
+       RowBox[{"graph", " ", "=", " ", 
+        RowBox[{"makeGeometricGraph", "[", 
+         RowBox[{"pts", ",", " ", "eps"}], "]"}]}], ";", "\n", "\n", "  ", 
+       RowBox[{"<|", "\n", "    ", 
+        RowBox[{
+         RowBox[{"\"\<Name\>\"", " ", "->", " ", "name"}], ",", "\n", "    ", 
+         RowBox[{"\"\<Graph\>\"", " ", "->", " ", "graph"}], ",", "\n", 
+         "    ", 
+         RowBox[{"\"\<Points\>\"", " ", "->", " ", "pts"}], ",", "\n", "    ", 
+         RowBox[{"\"\<RadiusAssociation\>\"", " ", "->", " ", 
+          "radiusAssociation"}], ",", "\n", "    ", 
+         RowBox[{"\"\<PhiAssociation\>\"", " ", "->", " ", "phiAssociation"}],
+          ",", "\n", "    ", 
+         RowBox[{"\"\<CoordinateAssociation\>\"", " ", "->", " ", 
+          "coordinateAssociation"}], ",", "\n", "    ", 
+         RowBox[{"\"\<GraphConstruction\>\"", " ", "->", 
+          " ", "\"\<radiusThresholdOriginal\>\""}], ",", "\n", "    ", 
+         RowBox[{"\"\<GraphK\>\"", " ", "->", " ", "kNN"}], ",", "\n", "    ", 
+         RowBox[{"\"\<GraphEpsilon\>\"", " ", "->", " ", "eps"}], ",", "\n", 
+         "    ", 
+         RowBox[{"\"\<EpsilonFactor\>\"", " ", "->", " ", "epsilonFactor"}], ",",
+          "\n", "    ", 
+         RowBox[{"\"\<Sampling\>\"", " ", "->", 
+          " ", "\"\<sharedRandomPolar\>\""}]}], "\n", "  ", "|>"}]}]}], "\n", 
+     "]"}]}], ";"}], "\n", "\n", 
+  RowBox[{"(*", " ", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"Original", " ", "matched"}], "-", 
+     RowBox[{"flat", " ", 
+      RowBox[{"convention", ":", " ", 
+       RowBox[{
+       "project", " ", "same", " ", "sample", " ", "to", " ", "z"}]}]}]}], "=", 
+    RowBox[{"0", " ", "and", " ", "use", " ", "direct", " ", 
+     RowBox[{"kNN", "."}]}]}], " ", "*)"}]}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+   "makeFlatMatchedDataOriginal", "[", "curvedData_Association", "]"}], " ", ":=",
+    " ", 
+   RowBox[{"Module", "[", "\n", "  ", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{
+      "name", ",", " ", "vertices", ",", " ", "radiusAssociation", ",", " ", 
+       "phiAssociation", ",", "\n", "   ", "radii", ",", " ", "phis", ",", 
+       " ", "pts", ",", " ", "coordinateAssociation", ",", " ", "graph"}], 
+      "}"}], ",", "\n", "\n", "  ", 
+     RowBox[{
+      RowBox[{"name", " ", "=", " ", 
+       RowBox[{
+        RowBox[{"curvedData", "[", "\"\<Name\>\"", "]"}], " ", "<>", 
+        " ", "\"\<_matchedFlatOriginal\>\""}]}], ";", "\n", "\n", "  ", 
+      RowBox[{"radiusAssociation", " ", "=", " ", 
+       RowBox[{"curvedData", "[", "\"\<RadiusAssociation\>\"", "]"}]}], ";", 
+      "\n", "  ", 
+      RowBox[{"phiAssociation", " ", "=", " ", 
+       RowBox[{"curvedData", "[", "\"\<PhiAssociation\>\"", "]"}]}], ";", 
+      "\n", "  ", 
+      RowBox[{"vertices", " ", "=", " ", 
+       RowBox[{"Keys", "[", "radiusAssociation", "]"}]}], ";", "\n", "\n", 
+      "  ", 
+      RowBox[{"radii", " ", "=", " ", 
+       RowBox[{"Lookup", "[", 
+        RowBox[{"radiusAssociation", ",", " ", "vertices"}], "]"}]}], ";", 
+      "\n", "  ", 
+      RowBox[{"phis", " ", "=", " ", 
+       RowBox[{"Lookup", "[", 
+        RowBox[{"phiAssociation", ",", " ", "vertices"}], "]"}]}], ";", "\n", 
+      "\n", "  ", 
+      RowBox[{"pts", " ", "=", " ", 
+       RowBox[{"MapThread", "[", "\n", "    ", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"#1", " ", 
+             RowBox[{"Cos", "[", "#2", "]"}]}], ",", " ", 
+            RowBox[{"#1", " ", 
+             RowBox[{"Sin", "[", "#2", "]"}]}], ",", " ", "0.0"}], "}"}], " ",
+           "&"}], ",", "\n", "    ", 
+         RowBox[{"{", 
+          RowBox[{"radii", ",", " ", "phis"}], "}"}]}], "\n", "  ", "]"}]}], ";",
+       "\n", "\n", "  ", 
+      RowBox[{"coordinateAssociation", " ", "=", " ", 
+       RowBox[{"AssociationThread", "[", 
+        RowBox[{"vertices", " ", "->", " ", "pts"}], "]"}]}], ";", "\n", "  ", 
+      RowBox[{"graph", " ", "=", " ", 
+       RowBox[{"makeKNNGraph", "[", 
+        RowBox[{"pts", ",", " ", "kNN"}], "]"}]}], ";", "\n", "\n", "  ", 
+      RowBox[{"<|", "\n", "    ", 
+       RowBox[{
+        RowBox[{"\"\<Name\>\"", " ", "->", " ", "name"}], ",", "\n", "    ", 
+        RowBox[{"\"\<Graph\>\"", " ", "->", " ", "graph"}], ",", "\n", "    ", 
+        RowBox[{"\"\<Points\>\"", " ", "->", " ", "pts"}], ",", "\n", "    ", 
+        RowBox[{"\"\<RadiusAssociation\>\"", " ", "->", " ", 
+         "radiusAssociation"}], ",", "\n", "    ", 
+        RowBox[{"\"\<PhiAssociation\>\"", " ", "->", " ", "phiAssociation"}], 
+        ",", "\n", "    ", 
+        RowBox[{"\"\<CoordinateAssociation\>\"", " ", "->", " ", 
+         "coordinateAssociation"}], ",", "\n", "    ", 
+        RowBox[{"\"\<GraphConstruction\>\"", " ", "->", 
+         " ", "\"\<matchedFlatOriginalKNN\>\""}], ",", "\n", "    ", 
+        RowBox[{"\"\<GraphK\>\"", " ", "->", " ", "kNN"}], ",", "\n", "    ", 
+        RowBox[{"\"\<GraphEpsilon\>\"", " ", "->", " ", 
+         RowBox[{"Missing", "[", "\"\<NotUsed\>\"", "]"}]}], ",", "\n", 
+        "    ", 
+        RowBox[{"\"\<EpsilonFactor\>\"", " ", "->", " ", 
+         RowBox[{"Missing", "[", "\"\<NotUsed\>\"", "]"}]}], ",", "\n", 
+        "    ", 
+        RowBox[{"\"\<Sampling\>\"", " ", "->", 
+         " ", "\"\<sameRphiAsCurved\>\""}]}], "\n", "  ", "|>"}]}]}], "\n", 
+    "]"}]}], ";"}], "\n"}], "Input"],
+
+Cell["4. Build curved graphs and original matched-flat controls", "Section"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"baseRPhiList", " ", "=", " ", 
+    RowBox[{"makeRandomRPhiList", "[", 
+     RowBox[{
+     "nSamples", ",", " ", "rMin", ",", " ", "rMax", ",", " ", "randomSeed"}],
+      "]"}]}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"curvedGraphData", " ", "=", " ", 
+    RowBox[{"{", "\n", "  ", 
+     RowBox[{
+      RowBox[{"makeSurfaceDataFromRPhi", "[", 
+       RowBox[{"\"\<SchwarzschildFlamm\>\"", ",", " ", "fSchwarzschild", ",", 
+        " ", "baseRPhiList"}], "]"}], ",", "\n", "  ", 
+      RowBox[{"makeSurfaceDataFromRPhi", "[", 
+       RowBox[{"\"\<ReissnerNordstrom\>\"", ",", " ", "fRN", ",", " ", 
+        "baseRPhiList"}], "]"}], ",", "\n", "  ", 
+      RowBox[{"makeSurfaceDataFromRPhi", "[", 
+       RowBox[{"\"\<Bardeen\>\"", ",", " ", "fBardeen", ",", " ", 
+        "baseRPhiList"}], "]"}], ",", "\n", "  ", 
+      RowBox[{"makeSurfaceDataFromRPhi", "[", 
+       RowBox[{"\"\<Hayward\>\"", ",", " ", "fHayward", ",", " ", 
+        "baseRPhiList"}], "]"}]}], "\n", "}"}]}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"flatGraphData", " ", "=", " ", 
+    RowBox[{
+    "makeFlatMatchedDataOriginal", " ", "/@", " ", "curvedGraphData"}]}], 
+   ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"allGraphData", " ", "=", " ", 
+    RowBox[{"Join", "[", 
+     RowBox[{"curvedGraphData", ",", " ", "flatGraphData"}], "]"}]}], ";"}], 
+  "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"graphSummary", " ", "=", " ", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"<|", "\n", "    ", 
+       RowBox[{
+        RowBox[{"\"\<Name\>\"", " ", "->", " ", 
+         RowBox[{"#", "[", "\"\<Name\>\"", "]"}]}], ",", "\n", "    ", 
+        RowBox[{"\"\<Construction\>\"", " ", "->", " ", 
+         RowBox[{"#", "[", "\"\<GraphConstruction\>\"", "]"}]}], ",", "\n", 
+        "    ", 
+        RowBox[{"\"\<k\>\"", " ", "->", " ", 
+         RowBox[{"#", "[", "\"\<GraphK\>\"", "]"}]}], ",", "\n", "    ", 
+        RowBox[{"\"\<Epsilon\>\"", " ", "->", " ", 
+         RowBox[{"#", "[", "\"\<GraphEpsilon\>\"", "]"}]}], ",", "\n", "    ", 
+        RowBox[{"\"\<EpsilonFactor\>\"", " ", "->", " ", 
+         RowBox[{"#", "[", "\"\<EpsilonFactor\>\"", "]"}]}], ",", "\n", 
+        "    ", 
+        RowBox[{"\"\<Vertices\>\"", " ", "->", " ", 
+         RowBox[{"VertexCount", "[", 
+          RowBox[{"#", "[", "\"\<Graph\>\"", "]"}], "]"}]}], ",", "\n", 
+        "    ", 
+        RowBox[{"\"\<Edges\>\"", " ", "->", " ", 
+         RowBox[{"EdgeCount", "[", 
+          RowBox[{"#", "[", "\"\<Graph\>\"", "]"}], "]"}]}], ",", "\n", 
+        "    ", 
+        RowBox[{"\"\<ConnectedQ\>\"", " ", "->", " ", 
+         RowBox[{"ConnectedGraphQ", "[", 
+          RowBox[{"#", "[", "\"\<Graph\>\"", "]"}], "]"}]}]}], "\n", "  ", 
+       "|>"}], " ", "&"}], " ", "/@", " ", "allGraphData"}]}], ";"}], 
+  "\n"}], "\n", 
+ RowBox[{
+  RowBox[{"Export", "[", 
+   RowBox[{
+    RowBox[{"FileNameJoin", "[", 
+     RowBox[{"{", 
+      RowBox[{
+      "outputDir", ",", " ", "\"\<graph_summary_original_control.csv\>\""}], 
+      "}"}], "]"}], ",", " ", "graphSummary"}], "]"}], ";"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"Export", "[", 
+    RowBox[{
+     RowBox[{"FileNameJoin", "[", 
+      RowBox[{"{", 
+       RowBox[{
+       "outputDir", ",", " ", "\"\<graph_summary_original_control.mx\>\""}], 
+       "}"}], "]"}], ",", " ", "graphSummary"}], "]"}], ";"}], "\n"}], "\n", 
+ RowBox[{"Dataset", "[", "graphSummary", "]"}], "\n"}], "Input"],
+
+Cell["5. Radial bins and reference vertices", "Section"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"ClearAll", "[", "\n", "  ", 
+    RowBox[{
+    "makeRadialBinAssociation", ",", "\n", "  ", "selectReferenceVertices"}], 
+    "\n", "]"}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"makeRadialBinAssociation", "[", 
+     RowBox[{"radiusAssociation_Association", ",", " ", "nBins_Integer"}], 
+     "]"}], " ", ":=", " ", 
+    RowBox[{"Module", "[", "\n", "  ", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{
+       "vertices", ",", " ", "radii", ",", " ", "rlo", ",", " ", "rhi"}], 
+       "}"}], ",", "\n", "  ", 
+      RowBox[{
+       RowBox[{"vertices", " ", "=", " ", 
+        RowBox[{"Keys", "[", "radiusAssociation", "]"}]}], ";", "\n", "  ", 
+       RowBox[{"radii", " ", "=", " ", 
+        RowBox[{"Values", "[", "radiusAssociation", "]"}]}], ";", "\n", "  ", 
+       RowBox[{"rlo", " ", "=", " ", 
+        RowBox[{"Min", "[", "radii", "]"}]}], ";", "\n", "  ", 
+       RowBox[{"rhi", " ", "=", " ", 
+        RowBox[{"Max", "[", "radii", "]"}]}], ";", "\n", "  ", 
+       RowBox[{"AssociationThread", "[", "\n", "    ", 
+        RowBox[{"vertices", " ", "->", "\n", "      ", 
+         RowBox[{"(", "\n", "        ", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"Clip", "[", "\n", "          ", 
+             RowBox[{
+              RowBox[{"1", " ", "+", " ", 
+               RowBox[{"Floor", "[", 
+                RowBox[{"nBins", " ", 
+                 RowBox[{
+                  RowBox[{"(", 
+                   RowBox[{
+                    RowBox[{"Lookup", "[", 
+                    RowBox[{"radiusAssociation", ",", " ", "#"}], "]"}], " ", 
+                    "-", " ", "rlo"}], ")"}], "/", 
+                  RowBox[{"(", 
+                   RowBox[{"rhi", " ", "-", " ", "rlo"}], ")"}]}]}], "]"}]}], 
+              ",", "\n", "          ", 
+              RowBox[{"{", 
+               RowBox[{"1", ",", " ", "nBins"}], "}"}]}], "\n", "        ", 
+             "]"}], " ", "&"}], " ", "/@", " ", "vertices"}], "\n", "      ", 
+          ")"}]}], "\n", "  ", "]"}]}]}], "\n", "]"}]}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"selectReferenceVertices", "[", 
+    RowBox[{
+    "radiusAssociation_Association", ",", " ", "nBins_Integer", ",", " ", 
+     RowBox[{"maxPerBin_", ":", " ", "All"}]}], "]"}], " ", ":=", " ", 
+   RowBox[{"Module", "[", "\n", "  ", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"binAssociation", ",", " ", "vertices", ",", " ", "grouped"}], 
+      "}"}], ",", "\n", "  ", 
+     RowBox[{
+      RowBox[{"vertices", " ", "=", " ", 
+       RowBox[{"Keys", "[", "radiusAssociation", "]"}]}], ";", "\n", "  ", 
+      RowBox[{"binAssociation", " ", "=", " ", 
+       RowBox[{"makeRadialBinAssociation", "[", 
+        RowBox[{"radiusAssociation", ",", " ", "nBins"}], "]"}]}], ";", "\n", 
+      "  ", 
+      RowBox[{"grouped", " ", "=", " ", 
+       RowBox[{"GroupBy", "[", 
+        RowBox[{"vertices", ",", " ", 
+         RowBox[{
+          RowBox[{"binAssociation", "[", "#", "]"}], " ", "&"}]}], "]"}]}], ";",
+       "\n", "  ", 
+      RowBox[{"If", "[", 
+       RowBox[{
+        RowBox[{"maxPerBin", " ", "===", " ", "All"}], ",", "\n", "    ", 
+        RowBox[{"Flatten", "[", 
+         RowBox[{"Values", "[", "grouped", "]"}], "]"}], ",", "\n", "    ", 
+        RowBox[{
+         RowBox[{"SeedRandom", "[", "1234", "]"}], ";", "\n", "    ", 
+         RowBox[{"Flatten", "[", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"RandomSample", "[", 
+             RowBox[{"#", ",", " ", 
+              RowBox[{"Min", "[", 
+               RowBox[{
+                RowBox[{"Length", "[", "#", "]"}], ",", " ", "maxPerBin"}], 
+               "]"}]}], "]"}], " ", "&"}], " ", "/@", " ", 
+           RowBox[{"Values", "[", "grouped", "]"}]}], "]"}]}]}], "\n", "  ", 
+       "]"}]}]}], "\n", "]"}]}], ";"}], "\n"}], "Input"],
+
+Cell["6. Shortest-path multiplicity diagnostics", "Section"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"ClearAll", "[", "\n", "  ", 
+    RowBox[{
+    "localClusteringCoefficient", ",", "\n", "  ", 
+     "shortestPathCountsFromSource", ",", "\n", "  ", "sourceDiagnostics", ",",
+      "\n", "  ", "diagnosticsForGraph"}], "\n", "]"}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"localClusteringCoefficient", "[", 
+     RowBox[{"g_Graph", ",", " ", "v_"}], "]"}], " ", ":=", " ", 
+    RowBox[{"Module", "[", "\n", "  ", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{
+       "neighbors", ",", " ", "d", ",", " ", "neighborPairs", ",", " ", 
+        "existingEdges"}], "}"}], ",", "\n", "  ", 
+      RowBox[{
+       RowBox[{"neighbors", " ", "=", " ", 
+        RowBox[{"AdjacencyList", "[", 
+         RowBox[{"g", ",", " ", "v"}], "]"}]}], ";", "\n", "  ", 
+       RowBox[{"d", " ", "=", " ", 
+        RowBox[{"Length", "[", "neighbors", "]"}]}], ";", "\n", "  ", 
+       RowBox[{"If", "[", 
+        RowBox[{
+         RowBox[{"d", " ", "<", " ", "2"}], ",", " ", 
+         RowBox[{"Return", "[", "0.", "]"}]}], "]"}], ";", "\n", "  ", 
+       RowBox[{"neighborPairs", " ", "=", " ", 
+        RowBox[{"Subsets", "[", 
+         RowBox[{"neighbors", ",", " ", 
+          RowBox[{"{", "2", "}"}]}], "]"}]}], ";", "\n", "  ", 
+       RowBox[{"existingEdges", " ", "=", " ", 
+        RowBox[{"Count", "[", 
+         RowBox[{"neighborPairs", ",", " ", 
+          RowBox[{"pair_", " ", "/;", " ", 
+           RowBox[{"EdgeQ", "[", 
+            RowBox[{"g", ",", " ", 
+             RowBox[{"UndirectedEdge", " ", "@@", " ", "pair"}]}], "]"}]}]}], 
+         "]"}]}], ";", "\n", "  ", 
+       RowBox[{"N", "[", 
+        RowBox[{"2", " ", 
+         RowBox[{"existingEdges", "/", 
+          RowBox[{"(", 
+           RowBox[{"d", " ", 
+            RowBox[{"(", 
+             RowBox[{"d", " ", "-", " ", "1"}], ")"}]}], ")"}]}]}], "]"}]}]}],
+      "\n", "]"}]}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"shortestPathCountsFromSource", "[", 
+     RowBox[{
+     "g_Graph", ",", " ", "source_", ",", " ", 
+      "adjacencyAssociation_Association"}], "]"}], " ", ":=", " ", 
+    RowBox[{"Module", "[", "\n", "  ", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{
+       "vertices", ",", " ", "distances", ",", " ", "reachable", ",", " ", 
+        "ordered", ",", " ", "sigma", ",", " ", "predecessors"}], "}"}], ",", 
+      "\n", "\n", "  ", 
+      RowBox[{
+       RowBox[{"vertices", " ", "=", " ", 
+        RowBox[{"VertexList", "[", "g", "]"}]}], ";", "\n", "\n", "  ", 
+       RowBox[{"distances", " ", "=", " ", 
+        RowBox[{"AssociationThread", "[", "\n", "    ", 
+         RowBox[{"vertices", ",", "\n", "    ", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"GraphDistance", "[", 
+             RowBox[{"g", ",", " ", "source", ",", " ", "#"}], "]"}], " ", 
+            "&"}], " ", "/@", " ", "vertices"}]}], "\n", "  ", "]"}]}], ";", 
+       "\n", "\n", "  ", 
+       RowBox[{"reachable", " ", "=", " ", 
+        RowBox[{"Select", "[", "\n", "    ", 
+         RowBox[{"vertices", ",", "\n", "    ", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"NumericQ", "[", 
+             RowBox[{"distances", "[", "#", "]"}], "]"}], " ", "&&", " ", 
+            RowBox[{
+             RowBox[{"distances", "[", "#", "]"}], " ", "<", " ", 
+             "Infinity"}]}], " ", "&"}]}], "\n", "  ", "]"}]}], ";", "\n", 
+       "\n", "  ", 
+       RowBox[{"ordered", " ", "=", " ", 
+        RowBox[{"SortBy", "[", 
+         RowBox[{"reachable", ",", " ", 
+          RowBox[{
+           RowBox[{"distances", "[", "#", "]"}], " ", "&"}]}], "]"}]}], ";", 
+       "\n", "\n", "  ", 
+       RowBox[{"sigma", " ", "=", " ", 
+        RowBox[{"AssociationThread", "[", 
+         RowBox[{"vertices", ",", " ", 
+          RowBox[{"ConstantArray", "[", 
+           RowBox[{"0", ",", " ", 
+            RowBox[{"Length", "[", "vertices", "]"}]}], "]"}]}], "]"}]}], ";",
+        "\n", "  ", 
+       RowBox[{
+        RowBox[{"sigma", "[", "source", "]"}], " ", "=", " ", "1"}], ";", 
+       "\n", "\n", "  ", 
+       RowBox[{"Do", "[", "\n", "    ", 
+        RowBox[{
+         RowBox[{"If", "[", 
+          RowBox[{
+           RowBox[{"v", " ", "=!=", " ", "source"}], ",", "\n", "      ", 
+           RowBox[{
+            RowBox[{"predecessors", " ", "=", " ", 
+             RowBox[{"Select", "[", "\n", "        ", 
+              RowBox[{
+               RowBox[{"Lookup", "[", 
+                RowBox[{"adjacencyAssociation", ",", " ", "v", ",", " ", 
+                 RowBox[{"{", "}"}]}], "]"}], ",", "\n", "        ", 
+               RowBox[{
+                RowBox[{
+                 RowBox[{"KeyExistsQ", "[", 
+                  RowBox[{"distances", ",", " ", "#"}], "]"}], " ", "&&", 
+                 "\n", "          ", 
+                 RowBox[{"NumericQ", "[", 
+                  RowBox[{"distances", "[", "#", "]"}], "]"}], " ", "&&", 
+                 "\n", "          ", 
+                 RowBox[{
+                  RowBox[{"distances", "[", "#", "]"}], " ", "==", " ", 
+                  RowBox[{
+                   RowBox[{"distances", "[", "v", "]"}], " ", "-", " ", 
+                   "1"}]}]}], " ", "&"}]}], "\n", "      ", "]"}]}], ";", 
+            "\n", "      ", 
+            RowBox[{
+             RowBox[{"sigma", "[", "v", "]"}], " ", "=", " ", 
+             RowBox[{"Total", "[", 
+              RowBox[{"Lookup", "[", 
+               RowBox[{"sigma", ",", " ", "predecessors", ",", " ", "0"}], 
+               "]"}], "]"}]}], ";"}]}], "\n", "    ", "]"}], ",", "\n", 
+         "    ", 
+         RowBox[{"{", 
+          RowBox[{"v", ",", " ", "ordered"}], "}"}]}], "\n", "  ", "]"}], ";",
+        "\n", "\n", "  ", "sigma"}]}], "\n", "]"}]}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"sourceDiagnostics", "[", "\n", "   ", 
+     RowBox[{
+     "g_Graph", ",", "\n", "   ", "source_", ",", "\n", "   ", 
+      "adjacencyAssociation_Association", ",", "\n", "   ", 
+      RowBox[{"rg_Integer", " ", ":", " ", "fixedGraphShellRadius"}]}], "\n", 
+     "   ", "]"}], " ", ":=", " ", 
+    RowBox[{"Module", "[", "\n", "  ", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{
+       "vertices", ",", " ", "distances", ",", " ", "reachable", ",", " ", 
+        "shellVertices", ",", " ", "shellSize", ",", "\n", "   ", "sigma", ",",
+         " ", "logSigma", ",", " ", "cLog", ",", " ", "meanLogMultiplicity", ",",
+         " ", "stdLogMultiplicity", ",", "\n", "   ", "degree", ",", " ", 
+        "clustering"}], "}"}], ",", "\n", "\n", "  ", 
+      RowBox[{
+       RowBox[{"vertices", " ", "=", " ", 
+        RowBox[{"DeleteCases", "[", 
+         RowBox[{
+          RowBox[{"VertexList", "[", "g", "]"}], ",", " ", "source"}], 
+         "]"}]}], ";", "\n", "\n", "  ", 
+       RowBox[{"distances", " ", "=", " ", 
+        RowBox[{"AssociationThread", "[", "\n", "    ", 
+         RowBox[{"vertices", ",", "\n", "    ", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"GraphDistance", "[", 
+             RowBox[{"g", ",", " ", "source", ",", " ", "#"}], "]"}], " ", 
+            "&"}], " ", "/@", " ", "vertices"}]}], "\n", "  ", "]"}]}], ";", 
+       "\n", "\n", "  ", 
+       RowBox[{"reachable", " ", "=", " ", 
+        RowBox[{"Select", "[", "\n", "    ", 
+         RowBox[{"vertices", ",", "\n", "    ", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"NumericQ", "[", 
+             RowBox[{"distances", "[", "#", "]"}], "]"}], " ", "&&", " ", 
+            RowBox[{
+             RowBox[{"distances", "[", "#", "]"}], " ", "<", " ", 
+             "Infinity"}]}], " ", "&"}]}], "\n", "  ", "]"}]}], ";", "\n", 
+       "\n", "  ", 
+       RowBox[{"shellVertices", " ", "=", " ", 
+        RowBox[{"Select", "[", 
+         RowBox[{"reachable", ",", " ", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"distances", "[", "#", "]"}], " ", "==", " ", "rg"}], " ",
+            "&"}]}], "]"}]}], ";", "\n", "  ", 
+       RowBox[{"shellSize", " ", "=", " ", 
+        RowBox[{"Length", "[", "shellVertices", "]"}]}], ";", "\n", "\n", 
+       "  ", 
+       RowBox[{"sigma", " ", "=", " ", 
+        RowBox[{"shortestPathCountsFromSource", "[", 
+         RowBox[{"g", ",", " ", "source", ",", " ", "adjacencyAssociation"}], 
+         "]"}]}], ";", "\n", "\n", "  ", 
+       RowBox[{"logSigma", " ", "=", " ", 
+        RowBox[{"If", "[", 
+         RowBox[{
+          RowBox[{"shellSize", " ", ">", " ", "0"}], ",", "\n", "    ", 
+          RowBox[{"Log", "[", 
+           RowBox[{"N", "[", 
+            RowBox[{"Lookup", "[", 
+             RowBox[{"sigma", ",", " ", "shellVertices"}], "]"}], "]"}], 
+           "]"}], ",", "\n", "    ", 
+          RowBox[{"{", "}"}]}], "\n", "  ", "]"}]}], ";", "\n", "\n", "  ", 
+       RowBox[{"cLog", " ", "=", " ", 
+        RowBox[{"If", "[", 
+         RowBox[{
+          RowBox[{
+           RowBox[{"Length", "[", "logSigma", "]"}], " ", ">", " ", "1"}], ",",
+           "\n", "    ", 
+          RowBox[{
+           RowBox[{"Mean", "[", 
+            RowBox[{
+             RowBox[{"Abs", "[", 
+              RowBox[{"logSigma", " ", "-", " ", 
+               RowBox[{"Mean", "[", "logSigma", "]"}]}], "]"}], "^", "3"}], 
+            "]"}], "^", 
+           RowBox[{"(", 
+            RowBox[{"1", "/", "3"}], ")"}]}], ",", "\n", "    ", "0."}], "\n",
+          "  ", "]"}]}], ";", "\n", "\n", "  ", 
+       RowBox[{"meanLogMultiplicity", " ", "=", " ", 
+        RowBox[{"If", "[", 
+         RowBox[{
+          RowBox[{
+           RowBox[{"Length", "[", "logSigma", "]"}], " ", ">", " ", "0"}], ",",
+           "\n", "    ", 
+          RowBox[{"Mean", "[", "logSigma", "]"}], ",", "\n", "    ", 
+          RowBox[{"Missing", "[", "\"\<EmptyShell\>\"", "]"}]}], "\n", "  ", 
+         "]"}]}], ";", "\n", "\n", "  ", 
+       RowBox[{"stdLogMultiplicity", " ", "=", " ", 
+        RowBox[{"If", "[", 
+         RowBox[{
+          RowBox[{
+           RowBox[{"Length", "[", "logSigma", "]"}], " ", ">", " ", "1"}], ",",
+           "\n", "    ", 
+          RowBox[{"StandardDeviation", "[", "logSigma", "]"}], ",", "\n", 
+          "    ", "0."}], "\n", "  ", "]"}]}], ";", "\n", "\n", "  ", 
+       RowBox[{"degree", " ", "=", " ", 
+        RowBox[{"VertexDegree", "[", 
+         RowBox[{"g", ",", " ", "source"}], "]"}]}], ";", "\n", "  ", 
+       RowBox[{"clustering", " ", "=", " ", 
+        RowBox[{"localClusteringCoefficient", "[", 
+         RowBox[{"g", ",", " ", "source"}], "]"}]}], ";", "\n", "\n", "  ", 
+       RowBox[{"<|", "\n", "   ", 
+        RowBox[{
+         RowBox[{"\"\<GraphShellRadius\>\"", " ", "->", " ", 
+          RowBox[{"N", "[", "rg", "]"}]}], ",", "\n", "   ", 
+         RowBox[{"\"\<CLog\>\"", " ", "->", " ", 
+          RowBox[{"N", "[", "cLog", "]"}]}], ",", "\n", "   ", 
+         RowBox[{"\"\<MeanShellSize\>\"", " ", "->", " ", 
+          RowBox[{"N", "[", "shellSize", "]"}]}], ",", "\n", "   ", 
+         RowBox[{"\"\<StdShellSize\>\"", " ", "->", " ", "0."}], ",", "\n", 
+         "   ", 
+         RowBox[{"\"\<MeanLogShellSize\>\"", " ", "->", " ", 
+          RowBox[{"N", "[", 
+           RowBox[{"Log", "[", 
+            RowBox[{"1", " ", "+", " ", "shellSize"}], "]"}], "]"}]}], ",", 
+         "\n", "   ", 
+         RowBox[{"\"\<StdLogShellSize\>\"", " ", "->", " ", "0."}], ",", "\n",
+          "   ", 
+         RowBox[{"\"\<MeanLogMultiplicityByShell\>\"", " ", "->", " ", 
+          RowBox[{"N", "[", "meanLogMultiplicity", "]"}]}], ",", "\n", "   ", 
+         RowBox[{"\"\<StdLogMultiplicityByShell\>\"", " ", "->", " ", 
+          RowBox[{"N", "[", "stdLogMultiplicity", "]"}]}], ",", "\n", "   ", 
+         RowBox[{"\"\<Degree\>\"", " ", "->", " ", 
+          RowBox[{"N", "[", "degree", "]"}]}], ",", "\n", "   ", 
+         RowBox[{"\"\<ClusteringCoefficient\>\"", " ", "->", " ", 
+          RowBox[{"N", "[", "clustering", "]"}]}]}], "\n", "   ", "|>"}]}]}], 
+     "\n", "  ", "]"}]}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"diagnosticsForGraph", "[", 
+    RowBox[{"data_Association", ",", " ", "nBins_Integer", ",", " ", 
+     RowBox[{"maxPerBin_", ":", " ", "All"}]}], "]"}], " ", ":=", " ", 
+   RowBox[{"Module", "[", "\n", "  ", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{
+      "g", ",", " ", "name", ",", " ", "radiusAssociation", ",", " ", 
+       "binAssociation", ",", " ", "refs", ",", "\n", "   ", 
+       "adjacencyAssociation", ",", " ", "rows"}], "}"}], ",", "\n", "\n", 
+     "  ", 
+     RowBox[{
+      RowBox[{"name", " ", "=", " ", 
+       RowBox[{"data", "[", "\"\<Name\>\"", "]"}]}], ";", "\n", "  ", 
+      RowBox[{"g", " ", "=", " ", 
+       RowBox[{"data", "[", "\"\<Graph\>\"", "]"}]}], ";", "\n", "  ", 
+      RowBox[{"radiusAssociation", " ", "=", " ", 
+       RowBox[{"data", "[", "\"\<RadiusAssociation\>\"", "]"}]}], ";", "\n", 
+      "\n", "  ", 
+      RowBox[{"binAssociation", " ", "=", " ", 
+       RowBox[{"makeRadialBinAssociation", "[", 
+        RowBox[{"radiusAssociation", ",", " ", "nBins"}], "]"}]}], ";", "\n", 
+      "  ", 
+      RowBox[{"refs", " ", "=", " ", 
+       RowBox[{"selectReferenceVertices", "[", 
+        RowBox[{
+        "radiusAssociation", ",", " ", "nBins", ",", " ", "maxPerBin"}], 
+        "]"}]}], ";", "\n", "\n", "  ", 
+      RowBox[{"adjacencyAssociation", " ", "=", " ", 
+       RowBox[{"AssociationThread", "[", "\n", "    ", 
+        RowBox[{
+         RowBox[{"VertexList", "[", "g", "]"}], ",", "\n", "    ", 
+         RowBox[{
+          RowBox[{
+           RowBox[{"AdjacencyList", "[", 
+            RowBox[{"g", ",", " ", "#"}], "]"}], " ", "&"}], " ", "/@", " ", 
+          RowBox[{"VertexList", "[", "g", "]"}]}]}], "\n", "  ", "]"}]}], ";",
+       "\n", "\n", "  ", 
+      RowBox[{"rows", " ", "=", " ", 
+       RowBox[{"Table", "[", "\n", "    ", 
+        RowBox[{
+         RowBox[{"Join", "[", "\n", "      ", 
+          RowBox[{
+           RowBox[{"<|", "\n", "        ", 
+            RowBox[{
+             RowBox[{"\"\<GraphName\>\"", " ", "->", " ", "name"}], ",", "\n",
+              "        ", 
+             RowBox[{"\"\<GraphConstruction\>\"", " ", "->", " ", 
+              RowBox[{"data", "[", "\"\<GraphConstruction\>\"", "]"}]}], ",", 
+             "\n", "        ", 
+             RowBox[{"\"\<SourceVertex\>\"", " ", "->", " ", "v"}], ",", "\n",
+              "        ", 
+             RowBox[{"\"\<Radius\>\"", " ", "->", " ", 
+              RowBox[{"N", "[", 
+               RowBox[{"radiusAssociation", "[", "v", "]"}], "]"}]}], ",", 
+             "\n", "        ", 
+             RowBox[{"\"\<RadialBin\>\"", " ", "->", " ", 
+              RowBox[{"N", "[", 
+               RowBox[{"binAssociation", "[", "v", "]"}], "]"}]}]}], "\n", 
+            "      ", "|>"}], ",", "\n", "      ", 
+           RowBox[{"sourceDiagnostics", "[", 
+            RowBox[{
+            "g", ",", " ", "v", ",", " ", "adjacencyAssociation", ",", " ", 
+             "fixedGraphShellRadius"}], "]"}]}], "\n", "    ", "]"}], ",", 
+         "\n", "    ", 
+         RowBox[{"{", 
+          RowBox[{"v", ",", " ", "refs"}], "}"}]}], "\n", "  ", "]"}]}], ";", 
+      "\n", "\n", "  ", "rows"}]}], "\n", "]"}]}], ";"}], "\n"}], "Input"],
+
+Cell["7. Aggregation helpers", "Section"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"ClearAll", "[", "\n", "  ", 
+    RowBox[{
+    "numericValues", ",", "\n", "  ", "meanOrMissing", ",", "\n", "  ", 
+     "sdOrZero", ",", "\n", "  ", "aggregateRowsByGraphAndBin", ",", "\n", 
+     "  ", "numericizeRows"}], "\n", "]"}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"numericValues", "[", "x_List", "]"}], " ", ":=", " ", 
+    RowBox[{"Select", "[", 
+     RowBox[{
+      RowBox[{"N", "[", "x", "]"}], ",", " ", "NumericQ"}], "]"}]}], ";"}], 
+  "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"meanOrMissing", "[", "x_List", "]"}], " ", ":=", " ", 
+    RowBox[{"Module", "[", 
+     RowBox[{
+      RowBox[{"{", "vals", "}"}], ",", "\n", "  ", 
+      RowBox[{
+       RowBox[{"vals", " ", "=", " ", 
+        RowBox[{"numericValues", "[", "x", "]"}]}], ";", "\n", "  ", 
+       RowBox[{"If", "[", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"Length", "[", "vals", "]"}], " ", ">", " ", "0"}], ",", 
+         " ", 
+         RowBox[{"N", "[", 
+          RowBox[{"Mean", "[", "vals", "]"}], "]"}], ",", " ", 
+         RowBox[{"Missing", "[", "\"\<NoNumericData\>\"", "]"}]}], "]"}]}]}], 
+     "\n", "]"}]}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"sdOrZero", "[", "x_List", "]"}], " ", ":=", " ", 
+    RowBox[{"Module", "[", 
+     RowBox[{
+      RowBox[{"{", "vals", "}"}], ",", "\n", "  ", 
+      RowBox[{
+       RowBox[{"vals", " ", "=", " ", 
+        RowBox[{"numericValues", "[", "x", "]"}]}], ";", "\n", "  ", 
+       RowBox[{"If", "[", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"Length", "[", "vals", "]"}], " ", ">", " ", "1"}], ",", 
+         " ", 
+         RowBox[{"N", "[", 
+          RowBox[{"StandardDeviation", "[", "vals", "]"}], "]"}], ",", " ", 
+         "0."}], "]"}]}]}], "\n", "]"}]}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"aggregateRowsByGraphAndBin", "[", "rows_List", "]"}], " ", ":=", 
+    " ", 
+    RowBox[{"Module", "[", "\n", "  ", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"groups", ",", " ", "diagnosticKeys"}], "}"}], ",", "\n", "\n",
+       "  ", 
+      RowBox[{
+       RowBox[{"diagnosticKeys", " ", "=", " ", 
+        RowBox[{"{", "\n", "    ", 
+         RowBox[{"\"\<CLog\>\"", ",", "\n", "    ", "\"\<MeanShellSize\>\"", ",",
+           "\n", "    ", "\"\<StdShellSize\>\"", ",", "\n", 
+          "    ", "\"\<MeanLogShellSize\>\"", ",", "\n", 
+          "    ", "\"\<StdLogShellSize\>\"", ",", "\n", 
+          "    ", "\"\<MeanLogMultiplicityByShell\>\"", ",", "\n", 
+          "    ", "\"\<StdLogMultiplicityByShell\>\"", ",", "\n", 
+          "    ", "\"\<Degree\>\"", ",", "\n", 
+          "    ", "\"\<ClusteringCoefficient\>\""}], "\n", "  ", "}"}]}], ";",
+        "\n", "\n", "  ", 
+       RowBox[{"groups", " ", "=", " ", 
+        RowBox[{
+         RowBox[{"Values", " ", "@", " ", 
+          RowBox[{"GroupBy", "[", 
+           RowBox[{"rows", ",", " ", 
+            RowBox[{
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"#", "[", "\"\<GraphName\>\"", "]"}], ",", " ", 
+               RowBox[{"#", "[", "\"\<RadialBin\>\"", "]"}]}], "}"}], " ", 
+             "&"}]}], "]"}]}], " ", "/.", " ", 
+         RowBox[{
+          RowBox[{"Key", "[", "x_", "]"}], " ", ":>", " ", "x"}]}]}], ";", 
+       "\n", "\n", "  ", 
+       RowBox[{"Table", "[", "\n", "    ", 
+        RowBox[{
+         RowBox[{"Association", "[", "\n", "      ", 
+          RowBox[{"Flatten", "[", "\n", "        ", 
+           RowBox[{"{", "\n", "          ", 
+            RowBox[{
+             RowBox[{"\"\<GraphName\>\"", " ", "->", " ", 
+              RowBox[{
+               RowBox[{"First", "[", "group", "]"}], "[", "\"\<GraphName\>\"",
+                "]"}]}], ",", "\n", "          ", 
+             RowBox[{"\"\<GraphConstruction\>\"", " ", "->", " ", 
+              RowBox[{
+               RowBox[{"First", "[", "group", "]"}], 
+               "[", "\"\<GraphConstruction\>\"", "]"}]}], ",", "\n", 
+             "          ", 
+             RowBox[{"\"\<RadialBin\>\"", " ", "->", " ", 
+              RowBox[{
+               RowBox[{"First", "[", "group", "]"}], "[", "\"\<RadialBin\>\"",
+                "]"}]}], ",", "\n", "          ", 
+             RowBox[{"\"\<RadiusMean\>\"", " ", "->", " ", 
+              RowBox[{"N", "[", 
+               RowBox[{"Mean", "[", 
+                RowBox[{"Lookup", "[", 
+                 RowBox[{"group", ",", " ", "\"\<Radius\>\""}], "]"}], "]"}], 
+               "]"}]}], ",", "\n", "          ", 
+             RowBox[{"\"\<NReferenceVertices\>\"", " ", "->", " ", 
+              RowBox[{"Length", "[", "group", "]"}]}], ",", "\n", "\n", 
+             "          ", 
+             RowBox[{"Table", "[", "\n", "            ", 
+              RowBox[{
+               RowBox[{"{", "\n", "              ", 
+                RowBox[{
+                 RowBox[{
+                  RowBox[{"key", " ", "<>", " ", "\"\<_Mean\>\""}], " ", "->",
+                   " ", 
+                  RowBox[{"meanOrMissing", "[", 
+                   RowBox[{"Lookup", "[", 
+                    RowBox[{"group", ",", " ", "key"}], "]"}], "]"}]}], ",", 
+                 "\n", "              ", 
+                 RowBox[{
+                  RowBox[{"key", " ", "<>", " ", "\"\<_SD\>\""}], " ", "->", 
+                  " ", 
+                  RowBox[{"sdOrZero", "[", 
+                   RowBox[{"Lookup", "[", 
+                    RowBox[{"group", ",", " ", "key"}], "]"}], "]"}]}]}], 
+                "\n", "            ", "}"}], ",", "\n", "            ", 
+               RowBox[{"{", 
+                RowBox[{"key", ",", " ", "diagnosticKeys"}], "}"}]}], "\n", 
+              "          ", "]"}]}], "\n", "        ", "}"}], "\n", "      ", 
+           "]"}], "\n", "    ", "]"}], ",", "\n", "    ", 
+         RowBox[{"{", 
+          RowBox[{"group", ",", " ", "groups"}], "}"}]}], "\n", "  ", 
+        "]"}]}]}], "\n", "]"}]}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"numericizeRows", "[", "rows_List", "]"}], " ", ":=", " ", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"(", 
+      RowBox[{"Association", " ", "@", " ", 
+       RowBox[{"KeyValueMap", "[", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"#1", " ", "->", " ", 
+           RowBox[{"Quiet", "@", 
+            RowBox[{"Check", "[", 
+             RowBox[{
+              RowBox[{"N", "[", "#2", "]"}], ",", " ", "#2"}], "]"}]}]}], " ",
+           "&"}], ",", " ", "#"}], "]"}]}], ")"}], " ", "&"}], " ", "/@", " ",
+     "rows"}]}], ";"}], "\n"}], "Input"],
+
+Cell["8. Checkpointed execution", "Section"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"ClearAll", "[", "runOneGraphCheckpoint", "]"}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"runOneGraphCheckpoint", "[", 
+    RowBox[{
+    "data_Association", ",", " ", "nBins_Integer", ",", " ", "maxPerBin_"}], 
+    "]"}], " ", ":=", " ", 
+   RowBox[{"Module", "[", "\n", "  ", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{
+      "name", ",", " ", "refTag", ",", " ", "sourceFile", ",", " ", 
+       "binnedFile", ",", " ", "time", ",", " ", "rows", ",", " ", 
+       "binnedRows"}], "}"}], ",", "\n", "\n", "  ", 
+     RowBox[{
+      RowBox[{"name", " ", "=", " ", 
+       RowBox[{"data", "[", "\"\<Name\>\"", "]"}]}], ";", "\n", "  ", 
+      RowBox[{"refTag", " ", "=", " ", 
+       RowBox[{"If", "[", 
+        RowBox[{
+         RowBox[{"maxPerBin", " ", "===", " ", "All"}], ",", 
+         " ", "\"\<refsAll\>\"", ",", " ", 
+         RowBox[{"\"\<refsPerBin\>\"", " ", "<>", " ", 
+          RowBox[{"ToString", "[", "maxPerBin", "]"}]}]}], "]"}]}], ";", "\n",
+       "\n", "  ", 
+      RowBox[{"sourceFile", " ", "=", " ", 
+       RowBox[{"FileNameJoin", "[", 
+        RowBox[{"{", 
+         RowBox[{"checkpointDir", ",", " ", 
+          RowBox[{
+          "name", " ", "<>", " ", "\"\<_\>\"", " ", "<>", " ", "refTag", " ", 
+           "<>", " ", "\"\<_sourceRows.mx\>\""}]}], "}"}], "]"}]}], ";", "\n",
+       "  ", 
+      RowBox[{"binnedFile", " ", "=", " ", 
+       RowBox[{"FileNameJoin", "[", 
+        RowBox[{"{", 
+         RowBox[{"checkpointDir", ",", " ", 
+          RowBox[{
+          "name", " ", "<>", " ", "\"\<_\>\"", " ", "<>", " ", "refTag", " ", 
+           "<>", " ", "\"\<_binnedRows.mx\>\""}]}], "}"}], "]"}]}], ";", "\n",
+       "\n", "  ", 
+      RowBox[{"If", "[", 
+       RowBox[{
+        RowBox[{
+         RowBox[{"FileExistsQ", "[", "sourceFile", "]"}], " ", "&&", " ", 
+         RowBox[{"FileExistsQ", "[", "binnedFile", "]"}]}], ",", "\n", "    ", 
+        RowBox[{
+         RowBox[{"Print", "[", 
+          RowBox[{"\"\<Already exists, loading: \>\"", ",", " ", "name"}], 
+          "]"}], ";", "\n", "    ", 
+         RowBox[{"Return", "[", "\n", "      ", 
+          RowBox[{"<|", "\n", "        ", 
+           RowBox[{
+            RowBox[{"\"\<Name\>\"", " ", "->", " ", "name"}], ",", "\n", 
+            "        ", 
+            RowBox[{"\"\<SourceRows\>\"", " ", "->", " ", 
+             RowBox[{"Import", "[", "sourceFile", "]"}]}], ",", "\n", 
+            "        ", 
+            RowBox[{"\"\<BinnedRows\>\"", " ", "->", " ", 
+             RowBox[{"Import", "[", "binnedFile", "]"}]}]}], "\n", "      ", 
+           "|>"}], "\n", "    ", "]"}], ";"}]}], "\n", "  ", "]"}], ";", "\n",
+       "\n", "  ", 
+      RowBox[{"Print", "[", 
+       RowBox[{"\"\<Running diagnostics for: \>\"", ",", " ", "name"}], "]"}],
+       ";", "\n", "\n", "  ", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"time", ",", " ", "rows"}], "}"}], " ", "=", " ", 
+       RowBox[{"AbsoluteTiming", "[", "\n", "    ", 
+        RowBox[{"CheckAbort", "[", "\n", "      ", 
+         RowBox[{
+          RowBox[{"diagnosticsForGraph", "[", 
+           RowBox[{"data", ",", " ", "nBins", ",", " ", "maxPerBin"}], "]"}], 
+          ",", "\n", "      ", "$Aborted"}], "\n", "    ", "]"}], "\n", "  ", 
+        "]"}]}], ";", "\n", "\n", "  ", 
+      RowBox[{"If", "[", 
+       RowBox[{
+        RowBox[{
+         RowBox[{"rows", " ", "===", " ", "$Aborted"}], " ", "||", " ", 
+         RowBox[{"rows", " ", "===", " ", "$Failed"}]}], ",", "\n", "    ", 
+        RowBox[{
+         RowBox[{"Print", "[", 
+          RowBox[{"\"\<FAILED or aborted: \>\"", ",", " ", "name"}], "]"}], ";",
+          "\n", "    ", 
+         RowBox[{"Return", "[", "$Failed", "]"}], ";"}]}], "\n", "  ", "]"}], 
+      ";", "\n", "\n", "  ", 
+      RowBox[{"rows", " ", "=", " ", 
+       RowBox[{"numericizeRows", "[", "rows", "]"}]}], ";", "\n", "\n", "  ", 
+      RowBox[{"Print", "[", 
+       RowBox[{"\"\<Finished \>\"", ",", " ", "name", ",", " ", "\"\< in \>\"",
+         ",", " ", 
+        RowBox[{"NumberForm", "[", 
+         RowBox[{
+          RowBox[{"time", "/", "60"}], ",", " ", 
+          RowBox[{"{", 
+           RowBox[{"5", ",", " ", "2"}], "}"}]}], "]"}], ",", 
+        " ", "\"\< minutes.\>\""}], "]"}], ";", "\n", "\n", "  ", 
+      RowBox[{"Export", "[", 
+       RowBox[{"sourceFile", ",", " ", "rows"}], "]"}], ";", "\n", "\n", "  ", 
+      RowBox[{"binnedRows", " ", "=", " ", 
+       RowBox[{"numericizeRows", "[", 
+        RowBox[{"aggregateRowsByGraphAndBin", "[", "rows", "]"}], "]"}]}], ";",
+       "\n", "\n", "  ", 
+      RowBox[{"Export", "[", 
+       RowBox[{"binnedFile", ",", " ", "binnedRows"}], "]"}], ";", "\n", "\n",
+       "  ", 
+      RowBox[{"<|", "\n", "    ", 
+       RowBox[{
+        RowBox[{"\"\<Name\>\"", " ", "->", " ", "name"}], ",", "\n", "    ", 
+        RowBox[{"\"\<SourceRows\>\"", " ", "->", " ", "rows"}], ",", "\n", 
+        "    ", 
+        RowBox[{"\"\<BinnedRows\>\"", " ", "->", " ", "binnedRows"}]}], "\n", 
+       "  ", "|>"}]}]}], "\n", "]"}]}], ";"}], "\n"}], "Input"],
+
+Cell["9. Smoke test on Schwarzschild/Flamm", "Section"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"smokeMaxRefsPerBin", " ", "=", " ", "5"}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"smokeFlamm", " ", "=", " ", 
+    RowBox[{"runOneGraphCheckpoint", "[", "\n", "  ", 
+     RowBox[{
+      RowBox[{"SelectFirst", "[", 
+       RowBox[{"allGraphData", ",", " ", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"#", "[", "\"\<Name\>\"", "]"}], " ", "==", 
+          " ", "\"\<SchwarzschildFlamm\>\""}], " ", "&"}]}], "]"}], ",", "\n",
+       "  ", "nRadialBins", ",", "\n", "  ", "smokeMaxRefsPerBin"}], "\n", 
+     "]"}]}], ";"}], "\n"}], "\n", 
+ RowBox[{"Dataset", "[", 
+  RowBox[{"smokeFlamm", "[", "\"\<BinnedRows\>\"", "]"}], 
+  "]"}], "\n"}], "Input"],
+
+Cell["10. Full run", "Section"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"(*", " ", 
+   RowBox[{
+    RowBox[{
+    "Run", " ", "this", " ", "after", " ", "the", " ", "smoke", " ", "test", " ",
+      "looks", " ", 
+     RowBox[{"reasonable", ".", " ", "With"}], " ", "maxRefsPerBin"}], " ", "=",
+     " ", 
+    RowBox[{"All", " ", "it", " ", "may", " ", "take", " ", 
+     RowBox[{"time", "."}]}]}], " ", "*)"}], "\n", "\n", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"resultsByGraph", " ", "=", " ", 
+     RowBox[{"Table", "[", "\n", "  ", 
+      RowBox[{
+       RowBox[{"runOneGraphCheckpoint", "[", 
+        RowBox[{"data", ",", " ", "nRadialBins", ",", " ", "maxRefsPerBin"}], 
+        "]"}], ",", "\n", "  ", 
+       RowBox[{"{", 
+        RowBox[{"data", ",", " ", "allGraphData"}], "}"}]}], "\n", "]"}]}], 
+    ";"}], "\n", "\n", 
+   RowBox[{
+    RowBox[{"refTag", " ", "=", " ", 
+     RowBox[{"If", "[", 
+      RowBox[{
+       RowBox[{"maxRefsPerBin", " ", "===", " ", "All"}], ",", 
+       " ", "\"\<refsAll\>\"", ",", " ", 
+       RowBox[{"\"\<refsPerBin\>\"", " ", "<>", " ", 
+        RowBox[{"ToString", "[", "maxRefsPerBin", "]"}]}]}], "]"}]}], ";"}], "\n", 
+   RowBox[{
+    RowBox[{"sourceFiles", " ", "=", " ", 
+     RowBox[{"FileNames", "[", 
+      RowBox[{
+       RowBox[{"\"\<*_\>\"", " ", "<>", " ", "refTag", " ", "<>", 
+        " ", "\"\<_sourceRows.mx\>\""}], ",", " ", "checkpointDir"}], "]"}]}],
+     ";"}], "\n", 
+   RowBox[{
+    RowBox[{"binnedFiles", " ", "=", " ", 
+     RowBox[{"FileNames", "[", 
+      RowBox[{
+       RowBox[{"\"\<*_\>\"", " ", "<>", " ", "refTag", " ", "<>", 
+        " ", "\"\<_binnedRows.mx\>\""}], ",", " ", "checkpointDir"}], "]"}]}],
+     ";"}], "\n", "\n", 
+   RowBox[{
+    RowBox[{"allSourceRows", " ", "=", " ", 
+     RowBox[{"Join", " ", "@@", " ", 
+      RowBox[{"(", 
+       RowBox[{"Import", " ", "/@", " ", "sourceFiles"}], ")"}]}]}], ";"}], "\n", 
+   RowBox[{
+    RowBox[{"allBinnedRows", " ", "=", " ", 
+     RowBox[{"Join", " ", "@@", " ", 
+      RowBox[{"(", 
+       RowBox[{"Import", " ", "/@", " ", "binnedFiles"}], ")"}]}]}], ";"}], 
+   "\n", "\n", 
+   RowBox[{
+    RowBox[{"allSourceRows", " ", "=", " ", 
+     RowBox[{"numericizeRows", "[", "allSourceRows", "]"}]}], ";"}], "\n", 
+   RowBox[{
+    RowBox[{"allBinnedRows", " ", "=", " ", 
+     RowBox[{"numericizeRows", "[", "allBinnedRows", "]"}]}], ";"}], "\n", "\n", 
+   RowBox[{
+    RowBox[{"Export", "[", 
+     RowBox[{
+      RowBox[{"FileNameJoin", "[", 
+       RowBox[{"{", 
+        RowBox[{
+        "outputDir", ",", 
+         " ", "\"\<source_vertex_diagnostics_original_control.mx\>\""}], 
+        "}"}], "]"}], ",", " ", "allSourceRows"}], "]"}], ";"}], "\n", 
+   RowBox[{
+    RowBox[{"Export", "[", 
+     RowBox[{
+      RowBox[{"FileNameJoin", "[", 
+       RowBox[{"{", 
+        RowBox[{
+        "outputDir", ",", 
+         " ", "\"\<radial_bin_diagnostics_original_control.mx\>\""}], "}"}], 
+       "]"}], ",", " ", "allBinnedRows"}], "]"}], ";"}], "\n", 
+   RowBox[{
+    RowBox[{"Export", "[", 
+     RowBox[{
+      RowBox[{"FileNameJoin", "[", 
+       RowBox[{"{", 
+        RowBox[{
+        "outputDir", ",", 
+         " ", "\"\<radial_bin_diagnostics_original_control.csv\>\""}], "}"}], 
+       "]"}], ",", " ", "allBinnedRows"}], "]"}], ";"}], "\n", "\n", 
+   RowBox[{"Dataset", "[", "allBinnedRows", "]"}], "\n"}]}]], "Input"],
+
+Cell["11. Profiles, plots, and Schwarzschild/control gap tables", "Section"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"ClearAll", "[", "\n", "  ", 
+    RowBox[{
+    "diagnosticsToCompare", ",", "\n", "  ", "getBinnedProfile", ",", "\n", 
+     "  ", "plotBHvsFlat", ",", "\n", "  ", "correlationSafe", ",", "\n", 
+     "  ", "corrWithRadius", ",", "\n", "  ", "baselineGapTable", ",", "\n", 
+     "  ", "meanAbsoluteProfileGap", ",", "\n", "  ", 
+     "standardizedProfileGap", ",", "\n", "  ", "profileShapeCorrelation"}], 
+    "\n", "]"}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"diagnosticsToCompare", " ", "=", " ", 
+    RowBox[{"{", "\n", "  ", 
+     RowBox[{"\"\<CLog\>\"", ",", "\n", "  ", "\"\<MeanLogShellSize\>\"", ",",
+       "\n", "  ", "\"\<MeanLogMultiplicityByShell\>\"", ",", "\n", 
+      "  ", "\"\<Degree\>\"", ",", "\n", 
+      "  ", "\"\<ClusteringCoefficient\>\""}], "\n", "}"}]}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"getBinnedProfile", "[", 
+     RowBox[{"graphName_String", ",", " ", "diagnosticKey_String"}], "]"}], 
+    " ", ":=", " ", 
+    RowBox[{"Module", "[", "\n", "  ", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"rows", ",", " ", "key"}], "}"}], ",", "\n", "  ", 
+      RowBox[{
+       RowBox[{"key", " ", "=", " ", 
+        RowBox[{"diagnosticKey", " ", "<>", " ", "\"\<_Mean\>\""}]}], ";", 
+       "\n", "  ", 
+       RowBox[{"rows", " ", "=", " ", 
+        RowBox[{"Select", "[", 
+         RowBox[{"allBinnedRows", ",", " ", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"#", "[", "\"\<GraphName\>\"", "]"}], " ", "==", " ", 
+            "graphName"}], " ", "&"}]}], "]"}]}], ";", "\n", "  ", 
+       RowBox[{"SortBy", "[", "\n", "    ", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"(", 
+           RowBox[{
+            RowBox[{"{", 
+             RowBox[{
+              RowBox[{"#", "[", "\"\<RadiusMean\>\"", "]"}], ",", " ", 
+              RowBox[{"#", "[", "key", "]"}]}], "}"}], " ", "&"}], ")"}], " ",
+           "/@", " ", "rows"}], ",", "\n", "    ", "First"}], "\n", "  ", 
+        "]"}]}]}], "\n", "]"}]}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"plotBHvsFlat", "[", 
+     RowBox[{
+     "bhName_String", ",", " ", "flatName_String", ",", " ", 
+      "diagnosticKey_String"}], "]"}], " ", ":=", " ", 
+    RowBox[{"Module", "[", "\n", "  ", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"bh", ",", " ", "flat", ",", " ", "plt", ",", " ", "outFile"}],
+        "}"}], ",", "\n", "  ", 
+      RowBox[{
+       RowBox[{"bh", " ", "=", " ", 
+        RowBox[{"getBinnedProfile", "[", 
+         RowBox[{"bhName", ",", " ", "diagnosticKey"}], "]"}]}], ";", "\n", 
+       "  ", 
+       RowBox[{"flat", " ", "=", " ", 
+        RowBox[{"getBinnedProfile", "[", 
+         RowBox[{"flatName", ",", " ", "diagnosticKey"}], "]"}]}], ";", "\n", 
+       "  ", 
+       RowBox[{"plt", " ", "=", " ", 
+        RowBox[{"ListLinePlot", "[", "\n", "    ", 
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{"bh", ",", " ", "flat"}], "}"}], ",", "\n", "    ", 
+          RowBox[{"Frame", " ", "->", " ", "True"}], ",", "\n", "    ", 
+          RowBox[{"FrameLabel", " ", "->", " ", 
+           RowBox[{"{", 
+            RowBox[{"\"\<r\>\"", ",", " ", "diagnosticKey"}], "}"}]}], ",", 
+          "\n", "    ", 
+          RowBox[{"PlotLegends", " ", "->", " ", 
+           RowBox[{"{", 
+            RowBox[{"bhName", ",", " ", "flatName"}], "}"}]}], ",", "\n", 
+          "    ", 
+          RowBox[{"PlotMarkers", " ", "->", " ", "Automatic"}], ",", "\n", 
+          "    ", 
+          RowBox[{"ImageSize", " ", "->", " ", "Large"}], ",", "\n", "    ", 
+          RowBox[{"PlotLabel", " ", "->", " ", 
+           RowBox[{
+           "diagnosticKey", " ", "<>", 
+            " ", "\"\<: black-hole graph vs original matched-flat \
+control\>\""}]}]}], "\n", "  ", "]"}]}], ";", "\n", "  ", 
+       RowBox[{"outFile", " ", "=", " ", 
+        RowBox[{"FileNameJoin", "[", 
+         RowBox[{"{", 
+          RowBox[{"outputDir", ",", " ", 
+           RowBox[{"\"\<profile_\>\"", " ", "<>", " ", "diagnosticKey", " ", "<>",
+             " ", "\"\<_\>\"", " ", "<>", " ", "bhName", " ", "<>", 
+            " ", "\"\<_vs_originalFlat.pdf\>\""}]}], "}"}], "]"}]}], ";", 
+       "\n", "  ", 
+       RowBox[{"Export", "[", 
+        RowBox[{"outFile", ",", " ", "plt"}], "]"}], ";", "\n", "  ", 
+       "plt"}]}], "\n", "]"}]}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"correlationSafe", "[", 
+     RowBox[{"x_List", ",", " ", "y_List"}], "]"}], " ", ":=", " ", 
+    RowBox[{"Module", "[", 
+     RowBox[{
+      RowBox[{"{", "pairs", "}"}], ",", "\n", "  ", 
+      RowBox[{
+       RowBox[{"pairs", " ", "=", " ", 
+        RowBox[{"Select", "[", 
+         RowBox[{
+          RowBox[{"Transpose", "[", 
+           RowBox[{"{", 
+            RowBox[{"x", ",", " ", "y"}], "}"}], "]"}], ",", " ", 
+          RowBox[{
+           RowBox[{"VectorQ", "[", 
+            RowBox[{"#", ",", " ", "NumericQ"}], "]"}], " ", "&"}]}], "]"}]}],
+        ";", "\n", "  ", 
+       RowBox[{"If", "[", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"Length", "[", "pairs", "]"}], " ", ">=", " ", "3"}], ",", 
+         "\n", "    ", 
+         RowBox[{"N", "[", 
+          RowBox[{"Correlation", "[", 
+           RowBox[{
+            RowBox[{"pairs", "[", 
+             RowBox[{"[", 
+              RowBox[{"All", ",", " ", "1"}], "]"}], "]"}], ",", " ", 
+            RowBox[{"pairs", "[", 
+             RowBox[{"[", 
+              RowBox[{"All", ",", " ", "2"}], "]"}], "]"}]}], "]"}], "]"}], ",",
+          "\n", "    ", 
+         RowBox[{"Missing", "[", "\"\<TooFewPoints\>\"", "]"}]}], "\n", "  ", 
+        "]"}]}]}], "\n", "]"}]}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"corrWithRadius", "[", 
+     RowBox[{"graphName_String", ",", " ", "diagnosticKey_String"}], "]"}], 
+    " ", ":=", " ", 
+    RowBox[{"Module", "[", 
+     RowBox[{
+      RowBox[{"{", "profile", "}"}], ",", "\n", "  ", 
+      RowBox[{
+       RowBox[{"profile", " ", "=", " ", 
+        RowBox[{"getBinnedProfile", "[", 
+         RowBox[{"graphName", ",", " ", "diagnosticKey"}], "]"}]}], ";", "\n",
+        "  ", 
+       RowBox[{"correlationSafe", "[", 
+        RowBox[{
+         RowBox[{"profile", "[", 
+          RowBox[{"[", 
+           RowBox[{"All", ",", " ", "1"}], "]"}], "]"}], ",", " ", 
+         RowBox[{"profile", "[", 
+          RowBox[{"[", 
+           RowBox[{"All", ",", " ", "2"}], "]"}], "]"}]}], "]"}]}]}], "\n", 
+     "]"}]}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"baselineGapTable", "[", 
+     RowBox[{
+     "bhName_String", ",", " ", "flatName_String", ",", " ", 
+      "diagnosticKeys_List"}], "]"}], " ", ":=", " ", 
+    RowBox[{"Table", "[", "\n", "  ", 
+     RowBox[{
+      RowBox[{"With", "[", "\n", "    ", 
+       RowBox[{
+        RowBox[{"{", "\n", "      ", 
+         RowBox[{
+          RowBox[{"bhCorr", " ", "=", " ", 
+           RowBox[{"corrWithRadius", "[", 
+            RowBox[{"bhName", ",", " ", "key"}], "]"}]}], ",", "\n", "      ", 
+          RowBox[{"flatCorr", " ", "=", " ", 
+           RowBox[{"corrWithRadius", "[", 
+            RowBox[{"flatName", ",", " ", "key"}], "]"}]}]}], "\n", "    ", 
+         "}"}], ",", "\n", "    ", 
+        RowBox[{"<|", "\n", "      ", 
+         RowBox[{
+          RowBox[{"\"\<Geometry\>\"", " ", "->", " ", "bhName"}], ",", "\n", 
+          "      ", 
+          RowBox[{"\"\<Control\>\"", " ", "->", " ", "flatName"}], ",", "\n", 
+          "      ", 
+          RowBox[{"\"\<Diagnostic\>\"", " ", "->", " ", "key"}], ",", "\n", 
+          "      ", 
+          RowBox[{"\"\<BHCorrR\>\"", " ", "->", " ", "bhCorr"}], ",", "\n", 
+          "      ", 
+          RowBox[{"\"\<FlatCorrR\>\"", " ", "->", " ", "flatCorr"}], ",", 
+          "\n", "      ", 
+          RowBox[{"\"\<Gap\>\"", " ", "->", " ", 
+           RowBox[{"N", "[", 
+            RowBox[{"bhCorr", " ", "-", " ", "flatCorr"}], "]"}]}], ",", "\n",
+           "      ", 
+          RowBox[{"\"\<AbsGap\>\"", " ", "->", " ", 
+           RowBox[{"N", "[", 
+            RowBox[{"Abs", "[", 
+             RowBox[{"bhCorr", " ", "-", " ", "flatCorr"}], "]"}], "]"}]}]}], 
+         "\n", "    ", "|>"}]}], "\n", "  ", "]"}], ",", "\n", "  ", 
+      RowBox[{"{", 
+       RowBox[{"key", ",", " ", "diagnosticKeys"}], "}"}]}], "\n", "]"}]}], 
+   ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"meanAbsoluteProfileGap", "[", 
+     RowBox[{
+     "bhName_String", ",", " ", "flatName_String", ",", " ", 
+      "diagnosticKey_String"}], "]"}], " ", ":=", " ", 
+    RowBox[{"Module", "[", "\n", "  ", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{
+       "bh", ",", " ", "flat", ",", " ", "commonR", ",", " ", "bhAssoc", ",", 
+        " ", "flatAssoc", ",", " ", "diffs"}], "}"}], ",", "\n", "  ", 
+      RowBox[{
+       RowBox[{"bh", " ", "=", " ", 
+        RowBox[{"getBinnedProfile", "[", 
+         RowBox[{"bhName", ",", " ", "diagnosticKey"}], "]"}]}], ";", "\n", 
+       "  ", 
+       RowBox[{"flat", " ", "=", " ", 
+        RowBox[{"getBinnedProfile", "[", 
+         RowBox[{"flatName", ",", " ", "diagnosticKey"}], "]"}]}], ";", "\n", 
+       "  ", 
+       RowBox[{"bhAssoc", " ", "=", " ", 
+        RowBox[{"Association", "[", 
+         RowBox[{"Rule", " ", "@@@", " ", "bh"}], "]"}]}], ";", "\n", "  ", 
+       RowBox[{"flatAssoc", " ", "=", " ", 
+        RowBox[{"Association", "[", 
+         RowBox[{"Rule", " ", "@@@", " ", "flat"}], "]"}]}], ";", "\n", "  ", 
+       RowBox[{"commonR", " ", "=", " ", 
+        RowBox[{"Intersection", "[", 
+         RowBox[{
+          RowBox[{"Keys", "[", "bhAssoc", "]"}], ",", " ", 
+          RowBox[{"Keys", "[", "flatAssoc", "]"}]}], "]"}]}], ";", "\n", "  ", 
+       RowBox[{"diffs", " ", "=", " ", 
+        RowBox[{"Abs", "[", 
+         RowBox[{
+          RowBox[{"N", "[", 
+           RowBox[{"Lookup", "[", 
+            RowBox[{"bhAssoc", ",", " ", "commonR"}], "]"}], "]"}], " ", "-", 
+          " ", 
+          RowBox[{"N", "[", 
+           RowBox[{"Lookup", "[", 
+            RowBox[{"flatAssoc", ",", " ", "commonR"}], "]"}], "]"}]}], 
+         "]"}]}], ";", "\n", "  ", 
+       RowBox[{"If", "[", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"Length", "[", "diffs", "]"}], " ", ">", " ", "0"}], ",", 
+         " ", 
+         RowBox[{"N", "[", 
+          RowBox[{"Mean", "[", "diffs", "]"}], "]"}], ",", " ", 
+         RowBox[{"Missing", "[", "\"\<NoCommonBins\>\"", "]"}]}], "]"}]}]}], 
+     "\n", "]"}]}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"standardizedProfileGap", "[", 
+     RowBox[{
+     "bhName_String", ",", " ", "flatName_String", ",", " ", 
+      "diagnosticKey_String"}], "]"}], " ", ":=", " ", 
+    RowBox[{"Module", "[", "\n", "  ", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{
+       "bh", ",", " ", "flat", ",", " ", "commonR", ",", " ", "bhAssoc", ",", 
+        " ", "flatAssoc", ",", " ", "bhVals", ",", " ", "flatVals", ",", " ", 
+        "pooledSD"}], "}"}], ",", "\n", "  ", 
+      RowBox[{
+       RowBox[{"bh", " ", "=", " ", 
+        RowBox[{"getBinnedProfile", "[", 
+         RowBox[{"bhName", ",", " ", "diagnosticKey"}], "]"}]}], ";", "\n", 
+       "  ", 
+       RowBox[{"flat", " ", "=", " ", 
+        RowBox[{"getBinnedProfile", "[", 
+         RowBox[{"flatName", ",", " ", "diagnosticKey"}], "]"}]}], ";", "\n", 
+       "  ", 
+       RowBox[{"bhAssoc", " ", "=", " ", 
+        RowBox[{"Association", "[", 
+         RowBox[{"Rule", " ", "@@@", " ", "bh"}], "]"}]}], ";", "\n", "  ", 
+       RowBox[{"flatAssoc", " ", "=", " ", 
+        RowBox[{"Association", "[", 
+         RowBox[{"Rule", " ", "@@@", " ", "flat"}], "]"}]}], ";", "\n", "  ", 
+       RowBox[{"commonR", " ", "=", " ", 
+        RowBox[{"Intersection", "[", 
+         RowBox[{
+          RowBox[{"Keys", "[", "bhAssoc", "]"}], ",", " ", 
+          RowBox[{"Keys", "[", "flatAssoc", "]"}]}], "]"}]}], ";", "\n", "  ", 
+       RowBox[{"bhVals", " ", "=", " ", 
+        RowBox[{"N", "[", 
+         RowBox[{"Lookup", "[", 
+          RowBox[{"bhAssoc", ",", " ", "commonR"}], "]"}], "]"}]}], ";", "\n",
+        "  ", 
+       RowBox[{"flatVals", " ", "=", " ", 
+        RowBox[{"N", "[", 
+         RowBox[{"Lookup", "[", 
+          RowBox[{"flatAssoc", ",", " ", "commonR"}], "]"}], "]"}]}], ";", 
+       "\n", "  ", 
+       RowBox[{"pooledSD", " ", "=", " ", 
+        RowBox[{"StandardDeviation", "[", 
+         RowBox[{"Join", "[", 
+          RowBox[{"bhVals", ",", " ", "flatVals"}], "]"}], "]"}]}], ";", "\n",
+        "  ", 
+       RowBox[{"If", "[", 
+        RowBox[{
+         RowBox[{"pooledSD", " ", ">", " ", "0"}], ",", " ", 
+         RowBox[{"N", "[", 
+          RowBox[{
+           RowBox[{"Mean", "[", 
+            RowBox[{"Abs", "[", 
+             RowBox[{"bhVals", " ", "-", " ", "flatVals"}], "]"}], "]"}], "/",
+            "pooledSD"}], "]"}], ",", " ", 
+         RowBox[{"Missing", "[", "\"\<ZeroPooledSD\>\"", "]"}]}], "]"}]}]}], 
+     "\n", "]"}]}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"profileShapeCorrelation", "[", 
+     RowBox[{
+     "bhName_String", ",", " ", "flatName_String", ",", " ", 
+      "diagnosticKey_String"}], "]"}], " ", ":=", " ", 
+    RowBox[{"Module", "[", "\n", "  ", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{
+       "bh", ",", " ", "flat", ",", " ", "commonR", ",", " ", "bhAssoc", ",", 
+        " ", "flatAssoc", ",", " ", "bhVals", ",", " ", "flatVals"}], "}"}], ",",
+       "\n", "  ", 
+      RowBox[{
+       RowBox[{"bh", " ", "=", " ", 
+        RowBox[{"getBinnedProfile", "[", 
+         RowBox[{"bhName", ",", " ", "diagnosticKey"}], "]"}]}], ";", "\n", 
+       "  ", 
+       RowBox[{"flat", " ", "=", " ", 
+        RowBox[{"getBinnedProfile", "[", 
+         RowBox[{"flatName", ",", " ", "diagnosticKey"}], "]"}]}], ";", "\n", 
+       "  ", 
+       RowBox[{"bhAssoc", " ", "=", " ", 
+        RowBox[{"Association", "[", 
+         RowBox[{"Rule", " ", "@@@", " ", "bh"}], "]"}]}], ";", "\n", "  ", 
+       RowBox[{"flatAssoc", " ", "=", " ", 
+        RowBox[{"Association", "[", 
+         RowBox[{"Rule", " ", "@@@", " ", "flat"}], "]"}]}], ";", "\n", "  ", 
+       RowBox[{"commonR", " ", "=", " ", 
+        RowBox[{"Intersection", "[", 
+         RowBox[{
+          RowBox[{"Keys", "[", "bhAssoc", "]"}], ",", " ", 
+          RowBox[{"Keys", "[", "flatAssoc", "]"}]}], "]"}]}], ";", "\n", "  ", 
+       RowBox[{"bhVals", " ", "=", " ", 
+        RowBox[{"N", "[", 
+         RowBox[{"Lookup", "[", 
+          RowBox[{"bhAssoc", ",", " ", "commonR"}], "]"}], "]"}]}], ";", "\n",
+        "  ", 
+       RowBox[{"flatVals", " ", "=", " ", 
+        RowBox[{"N", "[", 
+         RowBox[{"Lookup", "[", 
+          RowBox[{"flatAssoc", ",", " ", "commonR"}], "]"}], "]"}]}], ";", 
+       "\n", "  ", 
+       RowBox[{"If", "[", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"Length", "[", "bhVals", "]"}], " ", ">", " ", "2"}], ",", 
+         " ", 
+         RowBox[{"N", "[", 
+          RowBox[{"Correlation", "[", 
+           RowBox[{"bhVals", ",", " ", "flatVals"}], "]"}], "]"}], ",", " ", 
+         RowBox[{"Missing", "[", "\"\<TooFewPoints\>\"", "]"}]}], "]"}]}]}], 
+     "\n", "]"}]}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+   "flammFlatName", " ", "=", 
+    " ", "\"\<SchwarzschildFlamm_matchedFlatOriginal\>\""}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"Do", "[", "\n", "  ", 
+    RowBox[{
+     RowBox[{"plotBHvsFlat", "[", 
+      RowBox[{"\"\<SchwarzschildFlamm\>\"", ",", " ", "flammFlatName", ",", 
+       " ", "key"}], "]"}], ",", "\n", "  ", 
+     RowBox[{"{", 
+      RowBox[{"key", ",", " ", "diagnosticsToCompare"}], "}"}]}], "\n", "]"}],
+    ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"flammGapTable", " ", "=", " ", 
+    RowBox[{"baselineGapTable", "[", "\n", "  ", 
+     RowBox[{"\"\<SchwarzschildFlamm\>\"", ",", "\n", "  ", "flammFlatName", ",",
+       "\n", "  ", "diagnosticsToCompare"}], "\n", "]"}]}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"flammAmplitudeGapTable", " ", "=", " ", 
+    RowBox[{"Table", "[", "\n", "  ", 
+     RowBox[{
+      RowBox[{"<|", "\n", "    ", 
+       RowBox[{
+        RowBox[{"\"\<Diagnostic\>\"", " ", "->", " ", "key"}], ",", "\n", 
+        "    ", 
+        RowBox[{"\"\<MeanAbsProfileGap\>\"", " ", "->", " ", 
+         RowBox[{"meanAbsoluteProfileGap", "[", 
+          
+          RowBox[{"\"\<SchwarzschildFlamm\>\"", ",", " ", "flammFlatName", ",",
+            " ", "key"}], "]"}]}], ",", "\n", "    ", 
+        RowBox[{"\"\<StandardizedProfileGap\>\"", " ", "->", " ", 
+         RowBox[{"standardizedProfileGap", "[", 
+          
+          RowBox[{"\"\<SchwarzschildFlamm\>\"", ",", " ", "flammFlatName", ",",
+            " ", "key"}], "]"}]}], ",", "\n", "    ", 
+        RowBox[{"\"\<BHFlatShapeCorrelation\>\"", " ", "->", " ", 
+         RowBox[{"profileShapeCorrelation", "[", 
+          
+          RowBox[{"\"\<SchwarzschildFlamm\>\"", ",", " ", "flammFlatName", ",",
+            " ", "key"}], "]"}]}]}], "\n", "  ", "|>"}], ",", "\n", "  ", 
+      RowBox[{"{", 
+       RowBox[{"key", ",", " ", "diagnosticsToCompare"}], "}"}]}], "\n", 
+     "]"}]}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{"Export", "[", 
+   RowBox[{
+    RowBox[{"FileNameJoin", "[", 
+     RowBox[{"{", 
+      RowBox[{
+      "outputDir", ",", 
+       " ", "\"\<flamm_correlation_gap_table_original_control.csv\>\""}], 
+      "}"}], "]"}], ",", " ", "flammGapTable"}], "]"}], ";"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"Export", "[", 
+    RowBox[{
+     RowBox[{"FileNameJoin", "[", 
+      RowBox[{"{", 
+       RowBox[{
+       "outputDir", ",", 
+        " ", "\"\<flamm_amplitude_shape_gap_table_original_control.csv\>\""}],
+        "}"}], "]"}], ",", " ", "flammAmplitudeGapTable"}], "]"}], ";"}], 
+  "\n"}], "\n", 
+ RowBox[{"Dataset", "[", "flammGapTable", "]"}], "\n"}], "Input"],
+
+Cell["12. Amplitude/shape gap table", "Section"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"Dataset", "[", "flammAmplitudeGapTable", "]"}], "\n"}]], "Input"],
+
+Cell["13. Optional: run all geometry-vs-original-flat gap tables", "Section"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"allGeometryGapTables", " ", "=", " ", 
+    RowBox[{"Flatten", "[", "\n", "  ", 
+     RowBox[{
+      RowBox[{"Table", "[", "\n", "    ", 
+       RowBox[{
+        RowBox[{"baselineGapTable", "[", "\n", "      ", 
+         RowBox[{"geom", ",", "\n", "      ", 
+          RowBox[{"geom", " ", "<>", " ", "\"\<_matchedFlatOriginal\>\""}], ",",
+           "\n", "      ", "diagnosticsToCompare"}], "\n", "    ", "]"}], ",",
+         "\n", "    ", 
+        RowBox[{"{", 
+         RowBox[{"geom", ",", " ", 
+          RowBox[{"{", 
+           
+           RowBox[{"\"\<SchwarzschildFlamm\>\"", ",", 
+            " ", "\"\<ReissnerNordstrom\>\"", ",", " ", "\"\<Bardeen\>\"", ",",
+             " ", "\"\<Hayward\>\""}], "}"}]}], "}"}]}], "\n", "  ", "]"}], ",",
+       "\n", "  ", "1"}], "\n", "]"}]}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"allGeometryAmplitudeGapTables", " ", "=", " ", 
+    RowBox[{"Flatten", "[", "\n", "  ", 
+     RowBox[{
+      RowBox[{"Table", "[", "\n", "    ", 
+       RowBox[{
+        RowBox[{"Table", "[", "\n", "      ", 
+         RowBox[{
+          RowBox[{"<|", "\n", "        ", 
+           RowBox[{
+            RowBox[{"\"\<Geometry\>\"", " ", "->", " ", "geom"}], ",", "\n", 
+            "        ", 
+            RowBox[{"\"\<Control\>\"", " ", "->", " ", 
+             RowBox[{
+             "geom", " ", "<>", " ", "\"\<_matchedFlatOriginal\>\""}]}], ",", 
+            "\n", "        ", 
+            RowBox[{"\"\<Diagnostic\>\"", " ", "->", " ", "key"}], ",", "\n", 
+            "        ", 
+            RowBox[{"\"\<MeanAbsProfileGap\>\"", " ", "->", " ", 
+             RowBox[{"meanAbsoluteProfileGap", "[", 
+              RowBox[{"geom", ",", " ", 
+               RowBox[{
+               "geom", " ", "<>", " ", "\"\<_matchedFlatOriginal\>\""}], ",", 
+               " ", "key"}], "]"}]}], ",", "\n", "        ", 
+            RowBox[{"\"\<StandardizedProfileGap\>\"", " ", "->", " ", 
+             RowBox[{"standardizedProfileGap", "[", 
+              RowBox[{"geom", ",", " ", 
+               RowBox[{
+               "geom", " ", "<>", " ", "\"\<_matchedFlatOriginal\>\""}], ",", 
+               " ", "key"}], "]"}]}], ",", "\n", "        ", 
+            RowBox[{"\"\<BHFlatShapeCorrelation\>\"", " ", "->", " ", 
+             RowBox[{"profileShapeCorrelation", "[", 
+              RowBox[{"geom", ",", " ", 
+               RowBox[{
+               "geom", " ", "<>", " ", "\"\<_matchedFlatOriginal\>\""}], ",", 
+               " ", "key"}], "]"}]}]}], "\n", "      ", "|>"}], ",", "\n", 
+          "      ", 
+          RowBox[{"{", 
+           RowBox[{"key", ",", " ", "diagnosticsToCompare"}], "}"}]}], "\n", 
+         "    ", "]"}], ",", "\n", "    ", 
+        RowBox[{"{", 
+         RowBox[{"geom", ",", " ", 
+          RowBox[{"{", 
+           
+           RowBox[{"\"\<SchwarzschildFlamm\>\"", ",", 
+            " ", "\"\<ReissnerNordstrom\>\"", ",", " ", "\"\<Bardeen\>\"", ",",
+             " ", "\"\<Hayward\>\""}], "}"}]}], "}"}]}], "\n", "  ", "]"}], ",",
+       "\n", "  ", "1"}], "\n", "]"}]}], ";"}], "\n"}], "\n", 
+ RowBox[{
+  RowBox[{"Export", "[", 
+   RowBox[{
+    RowBox[{"FileNameJoin", "[", 
+     RowBox[{"{", 
+      RowBox[{
+      "outputDir", ",", 
+       " ", "\"\<all_geometry_correlation_gap_table_original_control.csv\>\""}\
+], "}"}], "]"}], ",", " ", "allGeometryGapTables"}], "]"}], ";"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"Export", "[", 
+    RowBox[{
+     RowBox[{"FileNameJoin", "[", 
+      RowBox[{"{", 
+       RowBox[{
+       "outputDir", ",", 
+        " ", "\"\<all_geometry_amplitude_shape_gap_table_original_control.csv\
+\>\""}], "}"}], "]"}], ",", " ", "allGeometryAmplitudeGapTables"}], "]"}], 
+   ";"}], "\n"}], "\n", 
+ RowBox[{"Dataset", "[", "allGeometryGapTables", "]"}], "\n"}], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"backupDir", "=", 
+    RowBox[{"FileNameJoin", "[", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"NotebookDirectory", "[", "]"}], ",", "\"\<backups\>\""}], 
+      "}"}], "]"}]}], ";"}], "\[IndentingNewLine]"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"If", "[", 
+    RowBox[{
+     RowBox[{"!", 
+      RowBox[{"DirectoryQ", "[", "backupDir", "]"}]}], ",", 
+     RowBox[{"CreateDirectory", "[", "backupDir", "]"}]}], "]"}], ";"}], 
+  "\[IndentingNewLine]"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"stamp", "=", 
+    RowBox[{"DateString", "[", 
+     RowBox[{"{", 
+      RowBox[{"\"\<Year\>\"", ",", "\"\<Month\>\"", ",", "\"\<Day\>\"", 
+       ",", "\"\<_\>\"", ",", "\"\<Hour\>\"", ",", "\"\<Minute\>\""}], "}"}], 
+     "]"}]}], ";"}], "\[IndentingNewLine]"}], "\n", 
+ RowBox[{"DumpSave", "[", 
+  RowBox[{
+   RowBox[{"FileNameJoin", "[", 
+    RowBox[{"{", 
+     RowBox[{"backupDir", ",", 
+      RowBox[{"\"\<matched-flat-control_backup_\>\"", "<>", "stamp", 
+       "<>", "\"\<.mx\>\""}]}], "}"}], "]"}], ",", "\"\<Global`\>\""}], 
+  "]"}]}], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"allBinnedRows", "=", 
+    RowBox[{"SortBy", "[", 
+     RowBox[{
+      RowBox[{
+       RowBox[{
+        RowBox[{"(", 
+         RowBox[{"Association", "@", 
+          RowBox[{"KeyValueMap", "[", 
+           RowBox[{
+            RowBox[{
+             RowBox[{"#1", "->", 
+              RowBox[{"N", "[", "#2", "]"}]}], "&"}], ",", "#"}], "]"}]}], 
+         ")"}], "&"}], "/@", "allBinnedRows"}], ",", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"#", "[", "\"\<GraphName\>\"", "]"}], ",", 
+         RowBox[{"#", "[", "\"\<RadialBin\>\"", "]"}]}], "}"}], "&"}]}], 
+     "]"}]}], ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"geometries", "=", 
+    RowBox[{"{", 
+     RowBox[{"\"\<SchwarzschildFlamm\>\"", ",", "\"\<ReissnerNordstrom\>\"", 
+      ",", "\"\<Bardeen\>\"", ",", "\"\<Hayward\>\""}], "}"}]}], ";"}], 
+  "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"diagnosticsToCompare", "=", 
+   RowBox[{"{", 
+    RowBox[{"\"\<CLog\>\"", ",", "\"\<MeanLogShellSize\>\"", 
+     ",", "\"\<MeanLogMultiplicityByShell\>\"", ",", "\"\<Degree\>\"", 
+     ",", "\"\<ClusteringCoefficient\>\""}], "}"}]}], ";"}]}], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"ClearAll", "[", 
+    RowBox[{"getProfile", ",", "plotBHvsFlatOriginal"}], "]"}], ";"}], 
+  "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"getProfile", "[", 
+     RowBox[{"graphName_String", ",", "diagnostic_String"}], "]"}], ":=", 
+    RowBox[{"Module", "[", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"rows", ",", "key"}], "}"}], ",", 
+      RowBox[{
+       RowBox[{"key", "=", 
+        RowBox[{"diagnostic", "<>", "\"\<_Mean\>\""}]}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"rows", "=", 
+        RowBox[{"SortBy", "[", 
+         RowBox[{
+          RowBox[{"Select", "[", 
+           RowBox[{"allBinnedRows", ",", 
+            RowBox[{
+             RowBox[{
+              RowBox[{"#", "[", "\"\<GraphName\>\"", "]"}], "==", 
+              "graphName"}], "&"}]}], "]"}], ",", 
+          RowBox[{
+           RowBox[{"#", "[", "\"\<RadiusMean\>\"", "]"}], "&"}]}], "]"}]}], ";",
+        "\[IndentingNewLine]", 
+       RowBox[{"Transpose", "[", 
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"Lookup", "[", 
+           RowBox[{"rows", ",", "\"\<RadiusMean\>\""}], "]"}], ",", 
+          RowBox[{"Lookup", "[", 
+           RowBox[{"rows", ",", "key"}], "]"}]}], "}"}], "]"}]}]}], "]"}]}], 
+   ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"plotBHvsFlatOriginal", "[", 
+    RowBox[{"geometry_String", ",", "diagnostic_String"}], "]"}], ":=", 
+   RowBox[{"Module", "[", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"flatName", ",", "bhData", ",", "flatData"}], "}"}], ",", 
+     RowBox[{
+      RowBox[{"flatName", "=", 
+       RowBox[{"geometry", "<>", "\"\<_matchedFlatOriginal\>\""}]}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"bhData", "=", 
+       RowBox[{"getProfile", "[", 
+        RowBox[{"geometry", ",", "diagnostic"}], "]"}]}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"flatData", "=", 
+       RowBox[{"getProfile", "[", 
+        RowBox[{"flatName", ",", "diagnostic"}], "]"}]}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"ListLinePlot", "[", 
+       RowBox[{
+        RowBox[{"{", 
+         RowBox[{"bhData", ",", "flatData"}], "}"}], ",", 
+        RowBox[{"Frame", "->", "True"}], ",", 
+        RowBox[{"Axes", "->", "False"}], ",", 
+        RowBox[{"PlotMarkers", "->", "Automatic"}], ",", 
+        RowBox[{"PlotLegends", "->", 
+         RowBox[{"Placed", "[", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"geometry", ",", "\"\<matched-flat original\>\""}], "}"}],
+            ",", "Below"}], "]"}]}], ",", 
+        RowBox[{"FrameLabel", "->", 
+         RowBox[{"{", 
+          RowBox[{"\"\<radial coordinate r\>\"", ",", "diagnostic"}], "}"}]}],
+         ",", 
+        RowBox[{"PlotLabel", "->", 
+         RowBox[{"geometry", "<>", "\"\< : \>\"", "<>", "diagnostic"}]}], ",", 
+        RowBox[{"ImageSize", "->", "420"}]}], "]"}]}]}], "]"}]}], 
+  ";"}]}], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"figCLogOriginalControl", "=", 
+    RowBox[{"GraphicsGrid", "[", 
+     RowBox[{
+      RowBox[{"Partition", "[", 
+       RowBox[{
+        RowBox[{
+         RowBox[{
+          RowBox[{"plotBHvsFlatOriginal", "[", 
+           RowBox[{"#", ",", "\"\<CLog\>\""}], "]"}], "&"}], "/@", 
+         "geometries"}], ",", "2"}], "]"}], ",", 
+      RowBox[{"ImageSize", "->", "900"}]}], "]"}]}], ";"}], 
+  "\n"}], "\[IndentingNewLine]", "figCLogOriginalControl"}], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"Export", "[", 
+    RowBox[{
+     RowBox[{"FileNameJoin", "[", 
+      RowBox[{"{", 
+       RowBox[{
+       "outputDir", 
+        ",", "\"\<figure_CLog_original_matched_flat_control.pdf\>\""}], "}"}],
+       "]"}], ",", "figCLogOriginalControl"}], "]"}], ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Export", "[", 
+   RowBox[{
+    RowBox[{"FileNameJoin", "[", 
+     RowBox[{"{", 
+      RowBox[{
+      "outputDir", 
+       ",", "\"\<figure_CLog_original_matched_flat_control.png\>\""}], "}"}], 
+     "]"}], ",", "figCLogOriginalControl", ",", 
+    RowBox[{"ImageResolution", "->", "300"}]}], "]"}], ";"}]}], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"allOriginalGapTable", "=", 
+    RowBox[{"Join", "@@", 
+     RowBox[{"Table", "[", 
+      RowBox[{
+       RowBox[{"baselineGapTable", "[", 
+        RowBox[{"geometry", ",", 
+         RowBox[{"geometry", "<>", "\"\<_matchedFlatOriginal\>\""}], ",", 
+         "diagnosticsToCompare"}], "]"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"geometry", ",", "geometries"}], "}"}]}], "]"}]}]}], ";"}], 
+  "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Dataset", "[", "allOriginalGapTable", "]"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Export", "[", 
+   RowBox[{
+    RowBox[{"FileNameJoin", "[", 
+     RowBox[{"{", 
+      RowBox[{
+      "outputDir", 
+       ",", "\"\<table_original_control_correlation_gaps.csv\>\""}], "}"}], 
+     "]"}], ",", "allOriginalGapTable"}], "]"}], ";"}]}], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"cLogGapRows", "=", 
+    RowBox[{"Select", "[", 
+     RowBox[{"allOriginalGapTable", ",", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"#", "[", "\"\<Diagnostic\>\"", "]"}], "==", "\"\<CLog\>\""}],
+        "&"}]}], "]"}]}], ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"figCLogGapBar", "=", 
+    RowBox[{"BarChart", "[", 
+     RowBox[{
+      RowBox[{"Abs", "[", 
+       RowBox[{"Lookup", "[", 
+        RowBox[{"cLogGapRows", ",", "\"\<Gap\>\""}], "]"}], "]"}], ",", 
+      RowBox[{"ChartLabels", "->", 
+       RowBox[{"Placed", "[", 
+        RowBox[{
+         RowBox[{"Lookup", "[", 
+          RowBox[{"cLogGapRows", ",", "\"\<Geometry\>\""}], "]"}], ",", 
+         "Below"}], "]"}]}], ",", 
+      RowBox[{"Frame", "->", "True"}], ",", 
+      RowBox[{"Axes", "->", "False"}], ",", 
+      RowBox[{"FrameLabel", "->", 
+       RowBox[{"{", 
+        RowBox[{"\"\<\\ngeometry\>\"", ",", "\"\<|correlation gap|\>\""}], 
+        "}"}]}], ",", 
+      RowBox[{
+      "PlotLabel", "->", "\"\<CLog black-hole/control correlation gap\>\""}], 
+      ",", 
+      RowBox[{"ImageSize", "->", "700"}]}], "]"}]}], ";"}], 
+  "\n"}], "\[IndentingNewLine]", "figCLogGapBar"}], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"Export", "[", 
+    RowBox[{
+     RowBox[{"FileNameJoin", "[", 
+      RowBox[{"{", 
+       RowBox[{
+       "outputDir", ",", "\"\<figure_CLog_correlation_gap_bar.pdf\>\""}], 
+       "}"}], "]"}], ",", "figCLogGapBar"}], "]"}], ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Export", "[", 
+   RowBox[{
+    RowBox[{"FileNameJoin", "[", 
+     RowBox[{"{", 
+      RowBox[{
+      "outputDir", ",", "\"\<figure_CLog_correlation_gap_bar.png\>\""}], 
+      "}"}], "]"}], ",", "figCLogGapBar", ",", 
+    RowBox[{"ImageResolution", "->", "300"}]}], "]"}], ";"}]}], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"figSchwarzschildAllDiagnostics", "=", 
+    RowBox[{"GraphicsGrid", "[", 
+     RowBox[{
+      RowBox[{"Partition", "[", 
+       RowBox[{
+        RowBox[{
+         RowBox[{
+          RowBox[{"plotBHvsFlatOriginal", "[", 
+           RowBox[{"\"\<SchwarzschildFlamm\>\"", ",", "#"}], "]"}], "&"}], "/@",
+          "diagnosticsToCompare"}], ",", "2", ",", "2", ",", 
+        RowBox[{"{", 
+         RowBox[{"1", ",", "1"}], "}"}], ",", 
+        RowBox[{"{", "}"}]}], "]"}], ",", 
+      RowBox[{"ImageSize", "->", "900"}]}], "]"}]}], ";"}], 
+  "\n"}], "\[IndentingNewLine]", "figSchwarzschildAllDiagnostics"}], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"Export", "[", 
+    RowBox[{
+     RowBox[{"FileNameJoin", "[", 
+      RowBox[{"{", 
+       RowBox[{
+       "outputDir", 
+        ",", "\"\<figure_schwarzschild_all_diagnostics_original_control.pdf\>\
+\""}], "}"}], "]"}], ",", "figSchwarzschildAllDiagnostics"}], "]"}], ";"}], 
+  "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Export", "[", 
+   RowBox[{
+    RowBox[{"FileNameJoin", "[", 
+     RowBox[{"{", 
+      RowBox[{
+      "outputDir", 
+       ",", "\"\<figure_schwarzschild_all_diagnostics_original_control.png\>\"\
+"}], "}"}], "]"}], ",", "figSchwarzschildAllDiagnostics", ",", 
+    RowBox[{"ImageResolution", "->", "300"}]}], "]"}], ";"}]}], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"allOriginalGapTableWithConvention", "=", 
+    RowBox[{
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{"Append", "[", 
+        RowBox[{"#", ",", 
+         RowBox[{"\"\<Interpretation\>\"", "->", 
+          RowBox[{"If", "[", 
+           RowBox[{
+            RowBox[{
+             RowBox[{"#", "[", "\"\<BHCorrR\>\"", "]"}], "<", "0"}], 
+            ",", "\"\<diagnostic decreases outward / enhanced inward\>\"", 
+            ",", "\"\<diagnostic increases outward\>\""}], "]"}]}]}], "]"}], 
+       "&"}], ")"}], "/@", "allOriginalGapTable"}]}], ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{"Dataset", "[", "allOriginalGapTableWithConvention", "]"}]}], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"Export", "[", 
+    RowBox[{
+     RowBox[{"FileNameJoin", "[", 
+      RowBox[{"{", 
+       RowBox[{
+       "outputDir", 
+        ",", "\"\<table_original_control_correlation_gaps_with_convention.csv\
+\>\""}], "}"}], "]"}], ",", "allOriginalGapTableWithConvention"}], "]"}], 
+   ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Export", "[", 
+   RowBox[{
+    RowBox[{"FileNameJoin", "[", 
+     RowBox[{"{", 
+      RowBox[{
+      "outputDir", 
+       ",", "\"\<table_original_control_correlation_gaps_with_convention.mx\>\
+\""}], "}"}], "]"}], ",", "allOriginalGapTableWithConvention"}], "]"}], 
+  ";"}]}], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"allBinnedRows", "=", 
+    RowBox[{"SortBy", "[", 
+     RowBox[{
+      RowBox[{
+       RowBox[{
+        RowBox[{"(", 
+         RowBox[{"Association", "@", 
+          RowBox[{"KeyValueMap", "[", 
+           RowBox[{
+            RowBox[{
+             RowBox[{"#1", "->", 
+              RowBox[{"N", "[", "#2", "]"}]}], "&"}], ",", "#"}], "]"}]}], 
+         ")"}], "&"}], "/@", "allBinnedRows"}], ",", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"#", "[", "\"\<GraphName\>\"", "]"}], ",", 
+         RowBox[{"#", "[", "\"\<RadialBin\>\"", "]"}]}], "}"}], "&"}]}], 
+     "]"}]}], ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"geometries", "=", 
+    RowBox[{"{", 
+     RowBox[{"\"\<SchwarzschildFlamm\>\"", ",", "\"\<ReissnerNordstrom\>\"", 
+      ",", "\"\<Bardeen\>\"", ",", "\"\<Hayward\>\""}], "}"}]}], ";"}], 
+  "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"diagnosticsToCompare", "=", 
+    RowBox[{"{", 
+     RowBox[{"\"\<CLog\>\"", ",", "\"\<MeanLogShellSize\>\"", 
+      ",", "\"\<MeanLogMultiplicityByShell\>\"", ",", "\"\<Degree\>\"", 
+      ",", "\"\<ClusteringCoefficient\>\""}], "}"}]}], ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"ClearAll", "[", 
+    RowBox[{"getProfile", ",", "plotBHvsFlatOriginal"}], "]"}], ";"}], 
+  "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"getProfile", "[", 
+     RowBox[{"graphName_String", ",", "diagnostic_String"}], "]"}], ":=", 
+    RowBox[{"Module", "[", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"rows", ",", "key"}], "}"}], ",", 
+      RowBox[{
+       RowBox[{"key", "=", 
+        RowBox[{"diagnostic", "<>", "\"\<_Mean\>\""}]}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"rows", "=", 
+        RowBox[{"SortBy", "[", 
+         RowBox[{
+          RowBox[{"Select", "[", 
+           RowBox[{"allBinnedRows", ",", 
+            RowBox[{
+             RowBox[{
+              RowBox[{"#", "[", "\"\<GraphName\>\"", "]"}], "==", 
+              "graphName"}], "&"}]}], "]"}], ",", 
+          RowBox[{
+           RowBox[{"#", "[", "\"\<RadiusMean\>\"", "]"}], "&"}]}], "]"}]}], ";",
+        "\[IndentingNewLine]", 
+       RowBox[{"Transpose", "[", 
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"Lookup", "[", 
+           RowBox[{"rows", ",", "\"\<RadiusMean\>\""}], "]"}], ",", 
+          RowBox[{"Lookup", "[", 
+           RowBox[{"rows", ",", "key"}], "]"}]}], "}"}], "]"}]}]}], "]"}]}], 
+   ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"plotBHvsFlatOriginal", "[", 
+    RowBox[{"geometry_String", ",", "diagnostic_String"}], "]"}], ":=", 
+   RowBox[{"Module", "[", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"flatName", ",", "bhData", ",", "flatData"}], "}"}], ",", 
+     RowBox[{
+      RowBox[{"flatName", "=", 
+       RowBox[{"geometry", "<>", "\"\<_matchedFlatOriginal\>\""}]}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"bhData", "=", 
+       RowBox[{"getProfile", "[", 
+        RowBox[{"geometry", ",", "diagnostic"}], "]"}]}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"flatData", "=", 
+       RowBox[{"getProfile", "[", 
+        RowBox[{"flatName", ",", "diagnostic"}], "]"}]}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"ListLinePlot", "[", 
+       RowBox[{
+        RowBox[{"{", 
+         RowBox[{"bhData", ",", "flatData"}], "}"}], ",", 
+        RowBox[{"Frame", "->", "True"}], ",", 
+        RowBox[{"Axes", "->", "False"}], ",", 
+        RowBox[{"PlotMarkers", "->", "Automatic"}], ",", 
+        RowBox[{"PlotLegends", "->", 
+         RowBox[{"Placed", "[", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"geometry", ",", "\"\<matched-flat original\>\""}], "}"}],
+            ",", "Below"}], "]"}]}], ",", 
+        RowBox[{"FrameLabel", "->", 
+         RowBox[{"{", 
+          RowBox[{"\"\<radial coordinate r\>\"", ",", "diagnostic"}], "}"}]}],
+         ",", 
+        RowBox[{"PlotLabel", "->", 
+         RowBox[{"geometry", "<>", "\"\< : \>\"", "<>", "diagnostic"}]}], ",", 
+        RowBox[{"ImageSize", "->", "420"}]}], "]"}]}]}], "]"}]}], 
+  ";"}]}], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"figCLogOriginalControl", "=", 
+    RowBox[{"GraphicsGrid", "[", 
+     RowBox[{
+      RowBox[{"Partition", "[", 
+       RowBox[{
+        RowBox[{
+         RowBox[{
+          RowBox[{"plotBHvsFlatOriginal", "[", 
+           RowBox[{"#", ",", "\"\<CLog\>\""}], "]"}], "&"}], "/@", 
+         "geometries"}], ",", "2"}], "]"}], ",", 
+      RowBox[{"ImageSize", "->", "900"}]}], "]"}]}], ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"Export", "[", 
+    RowBox[{
+     RowBox[{"FileNameJoin", "[", 
+      RowBox[{"{", 
+       RowBox[{
+       "outputDir", 
+        ",", "\"\<figure_CLog_original_matched_flat_control.pdf\>\""}], "}"}],
+       "]"}], ",", "figCLogOriginalControl"}], "]"}], ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Export", "[", 
+   RowBox[{
+    RowBox[{"FileNameJoin", "[", 
+     RowBox[{"{", 
+      RowBox[{
+      "outputDir", 
+       ",", "\"\<figure_CLog_original_matched_flat_control.png\>\""}], "}"}], 
+     "]"}], ",", "figCLogOriginalControl", ",", 
+    RowBox[{"ImageResolution", "->", "300"}]}], "]"}], ";"}]}], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"cLogGapRows", "=", 
+    RowBox[{"Select", "[", 
+     RowBox[{"allOriginalGapTableWithConvention", ",", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"#", "[", "\"\<Diagnostic\>\"", "]"}], "==", "\"\<CLog\>\""}],
+        "&"}]}], "]"}]}], ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"figCLogGapBar", "=", 
+    RowBox[{"BarChart", "[", 
+     RowBox[{
+      RowBox[{"Abs", "[", 
+       RowBox[{"Lookup", "[", 
+        RowBox[{"cLogGapRows", ",", "\"\<Gap\>\""}], "]"}], "]"}], ",", 
+      RowBox[{"ChartLabels", "->", 
+       RowBox[{"Placed", "[", 
+        RowBox[{
+         RowBox[{"Lookup", "[", 
+          RowBox[{"cLogGapRows", ",", "\"\<Geometry\>\""}], "]"}], ",", 
+         "Below"}], "]"}]}], ",", 
+      RowBox[{"Frame", "->", "True"}], ",", 
+      RowBox[{"Axes", "->", "False"}], ",", 
+      RowBox[{"FrameLabel", "->", 
+       RowBox[{"{", 
+        RowBox[{"\"\<\\ngeometry\>\"", ",", "\"\<|correlation gap|\>\""}], 
+        "}"}]}], ",", 
+      RowBox[{
+      "PlotLabel", "->", "\"\<CLog black-hole/control correlation gap\>\""}], 
+      ",", 
+      RowBox[{"ImageSize", "->", "700"}]}], "]"}]}], ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"Export", "[", 
+    RowBox[{
+     RowBox[{"FileNameJoin", "[", 
+      RowBox[{"{", 
+       RowBox[{
+       "outputDir", ",", "\"\<figure_CLog_correlation_gap_bar.pdf\>\""}], 
+       "}"}], "]"}], ",", "figCLogGapBar"}], "]"}], ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Export", "[", 
+   RowBox[{
+    RowBox[{"FileNameJoin", "[", 
+     RowBox[{"{", 
+      RowBox[{
+      "outputDir", ",", "\"\<figure_CLog_correlation_gap_bar.png\>\""}], 
+      "}"}], "]"}], ",", "figCLogGapBar", ",", 
+    RowBox[{"ImageResolution", "->", "300"}]}], "]"}], ";"}]}], "Input"],
+
+Cell[BoxData["figCLogGapBar"], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"figSchwarzschildAllDiagnostics", "=", 
+    RowBox[{"GraphicsGrid", "[", 
+     RowBox[{
+      RowBox[{"Partition", "[", 
+       RowBox[{
+        RowBox[{
+         RowBox[{
+          RowBox[{"plotBHvsFlatOriginal", "[", 
+           RowBox[{"\"\<SchwarzschildFlamm\>\"", ",", "#"}], "]"}], "&"}], "/@",
+          "diagnosticsToCompare"}], ",", "2", ",", "2", ",", 
+        RowBox[{"{", 
+         RowBox[{"1", ",", "1"}], "}"}], ",", 
+        RowBox[{"{", "}"}]}], "]"}], ",", 
+      RowBox[{"ImageSize", "->", "900"}]}], "]"}]}], ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"Export", "[", 
+    RowBox[{
+     RowBox[{"FileNameJoin", "[", 
+      RowBox[{"{", 
+       RowBox[{
+       "outputDir", 
+        ",", "\"\<figure_schwarzschild_all_diagnostics_original_control.pdf\>\
+\""}], "}"}], "]"}], ",", "figSchwarzschildAllDiagnostics"}], "]"}], ";"}], 
+  "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Export", "[", 
+   RowBox[{
+    RowBox[{"FileNameJoin", "[", 
+     RowBox[{"{", 
+      RowBox[{
+      "outputDir", 
+       ",", "\"\<figure_schwarzschild_all_diagnostics_original_control.png\>\"\
+"}], "}"}], "]"}], ",", "figSchwarzschildAllDiagnostics", ",", 
+    RowBox[{"ImageResolution", "->", "300"}]}], "]"}], ";"}]}], "Input"],
+
+Cell[BoxData["figSchwarzschildAllDiagnostics"], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"projectRoot", "=", 
+    RowBox[{"NotebookDirectory", "[", "]"}]}], ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"figDir", "=", 
+    RowBox[{"FileNameJoin", "[", 
+     RowBox[{"{", 
+      RowBox[{"projectRoot", ",", "\"\<results\>\"", ",", "\"\<figures\>\""}],
+       "}"}], "]"}]}], ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"If", "[", 
+   RowBox[{
+    RowBox[{"!", 
+     RowBox[{"DirectoryQ", "[", "figDir", "]"}]}], ",", 
+    RowBox[{"CreateDirectory", "[", 
+     RowBox[{"figDir", ",", 
+      RowBox[{"CreateIntermediateDirectories", "->", "True"}]}], "]"}]}], 
+   "]"}], ";"}]}], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"extraDir", "=", 
+    RowBox[{"FileNameJoin", "[", 
+     RowBox[{"{", 
+      RowBox[{"outputDir", ",", "\"\<extra_sensitivity_checks\>\""}], "}"}], 
+     "]"}]}], ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"If", "[", 
+    RowBox[{
+     RowBox[{"!", 
+      RowBox[{"DirectoryQ", "[", "extraDir", "]"}]}], ",", 
+     RowBox[{"CreateDirectory", "[", 
+      RowBox[{"extraDir", ",", 
+       RowBox[{"CreateIntermediateDirectories", "->", "True"}]}], "]"}]}], 
+    "]"}], ";"}], "\n"}], "\[IndentingNewLine]", "extraDir"}], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"ClearAll", "[", "graphSummaryExtended", "]"}], ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"graphSummaryExtended", "=", 
+    RowBox[{"Table", "[", 
+     RowBox[{
+      RowBox[{"With", "[", 
+       RowBox[{
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"g", "=", 
+           RowBox[{"data", "[", "\"\<Graph\>\"", "]"}]}], ",", 
+          RowBox[{"degs", "=", 
+           RowBox[{"VertexDegree", "[", 
+            RowBox[{"data", "[", "\"\<Graph\>\"", "]"}], "]"}]}]}], "}"}], ",", 
+        RowBox[{"<|", 
+         RowBox[{
+          RowBox[{"\"\<Name\>\"", "->", 
+           RowBox[{"data", "[", "\"\<Name\>\"", "]"}]}], ",", 
+          RowBox[{"\"\<Construction\>\"", "->", 
+           RowBox[{"data", "[", "\"\<GraphConstruction\>\"", "]"}]}], ",", 
+          RowBox[{"\"\<k\>\"", "->", 
+           RowBox[{"data", "[", "\"\<GraphK\>\"", "]"}]}], ",", 
+          RowBox[{"\"\<Epsilon\>\"", "->", 
+           RowBox[{"data", "[", "\"\<GraphEpsilon\>\"", "]"}]}], ",", 
+          RowBox[{"\"\<EpsilonFactor\>\"", "->", 
+           RowBox[{"data", "[", "\"\<EpsilonFactor\>\"", "]"}]}], ",", 
+          RowBox[{"\"\<Vertices\>\"", "->", 
+           RowBox[{"VertexCount", "[", "g", "]"}]}], ",", 
+          RowBox[{"\"\<Edges\>\"", "->", 
+           RowBox[{"EdgeCount", "[", "g", "]"}]}], ",", 
+          RowBox[{"\"\<ConnectedQ\>\"", "->", 
+           RowBox[{"ConnectedGraphQ", "[", "g", "]"}]}], ",", 
+          RowBox[{"\"\<MeanDegree\>\"", "->", 
+           RowBox[{"N", "[", 
+            RowBox[{"Mean", "[", "degs", "]"}], "]"}]}], ",", 
+          RowBox[{"\"\<MinDegree\>\"", "->", 
+           RowBox[{"Min", "[", "degs", "]"}]}], ",", 
+          RowBox[{"\"\<MaxDegree\>\"", "->", 
+           RowBox[{"Max", "[", "degs", "]"}]}], ",", 
+          RowBox[{"\"\<EdgeDensity\>\"", "->", 
+           RowBox[{"N", "[", 
+            RowBox[{"GraphDensity", "[", "g", "]"}], "]"}]}]}], "|>"}]}], 
+       "]"}], ",", 
+      RowBox[{"{", 
+       RowBox[{"data", ",", "allGraphData"}], "}"}]}], "]"}]}], ";"}], 
+  "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Dataset", "[", "graphSummaryExtended", "]"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"Export", "[", 
+    RowBox[{
+     RowBox[{"FileNameJoin", "[", 
+      RowBox[{"{", 
+       RowBox[{"extraDir", ",", "\"\<graph_summary_extended.csv\>\""}], "}"}],
+       "]"}], ",", "graphSummaryExtended"}], "]"}], ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Export", "[", 
+   RowBox[{
+    RowBox[{"FileNameJoin", "[", 
+     RowBox[{"{", 
+      RowBox[{"extraDir", ",", "\"\<graph_summary_extended.mx\>\""}], "}"}], 
+     "]"}], ",", "graphSummaryExtended"}], "]"}], ";"}]}], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"ClearAll", "[", 
+    RowBox[{
+    "diagnosticsForGraphAtRG", ",", "getProfileFromBinnedRows", ",", 
+     "correlationSafeLocal", ",", "corrWithRadiusFromBinnedRows", ",", 
+     "gapTableFromBinnedRows"}], "]"}], ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"diagnosticsForGraphAtRG", "[", 
+     RowBox[{
+     "data_Association", ",", "nBins_Integer", ",", "maxPerBin_", ",", 
+      "rg_Integer"}], "]"}], ":=", 
+    RowBox[{"Module", "[", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{
+       "g", ",", "name", ",", "radiusAssociation", ",", "binAssociation", ",",
+         "refs", ",", "adjacencyAssociation", ",", "rows"}], "}"}], ",", 
+      RowBox[{
+       RowBox[{"name", "=", 
+        RowBox[{"data", "[", "\"\<Name\>\"", "]"}]}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"g", "=", 
+        RowBox[{"data", "[", "\"\<Graph\>\"", "]"}]}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"radiusAssociation", "=", 
+        RowBox[{"data", "[", "\"\<RadiusAssociation\>\"", "]"}]}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"binAssociation", "=", 
+        RowBox[{"makeRadialBinAssociation", "[", 
+         RowBox[{"radiusAssociation", ",", "nBins"}], "]"}]}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"refs", "=", 
+        RowBox[{"selectReferenceVertices", "[", 
+         RowBox[{"radiusAssociation", ",", "nBins", ",", "maxPerBin"}], 
+         "]"}]}], ";", "\[IndentingNewLine]", 
+       RowBox[{"adjacencyAssociation", "=", 
+        RowBox[{"AssociationThread", "[", 
+         RowBox[{
+          RowBox[{"VertexList", "[", "g", "]"}], ",", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"AdjacencyList", "[", 
+             RowBox[{"g", ",", "#"}], "]"}], "&"}], "/@", 
+           RowBox[{"VertexList", "[", "g", "]"}]}]}], "]"}]}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"rows", "=", 
+        RowBox[{"Table", "[", 
+         RowBox[{
+          RowBox[{"Join", "[", 
+           RowBox[{
+            RowBox[{"<|", 
+             RowBox[{
+              RowBox[{"\"\<GraphName\>\"", "->", "name"}], ",", 
+              RowBox[{"\"\<GraphConstruction\>\"", "->", 
+               RowBox[{"data", "[", "\"\<GraphConstruction\>\"", "]"}]}], ",", 
+              RowBox[{"\"\<SourceVertex\>\"", "->", "v"}], ",", 
+              RowBox[{"\"\<Radius\>\"", "->", 
+               RowBox[{"N", "[", 
+                RowBox[{"radiusAssociation", "[", "v", "]"}], "]"}]}], ",", 
+              RowBox[{"\"\<RadialBin\>\"", "->", 
+               RowBox[{"N", "[", 
+                RowBox[{"binAssociation", "[", "v", "]"}], "]"}]}]}], "|>"}], 
+            ",", 
+            RowBox[{"sourceDiagnostics", "[", 
+             RowBox[{"g", ",", "v", ",", "adjacencyAssociation", ",", "rg"}], 
+             "]"}]}], "]"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"v", ",", "refs"}], "}"}]}], "]"}]}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"numericizeRows", "[", "rows", "]"}]}]}], "]"}]}], ";"}], 
+  "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"getProfileFromBinnedRows", "[", 
+     RowBox[{
+     "binnedRows_List", ",", "graphName_String", ",", 
+      "diagnosticKey_String"}], "]"}], ":=", 
+    RowBox[{"Module", "[", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"rows", ",", "key"}], "}"}], ",", 
+      RowBox[{
+       RowBox[{"key", "=", 
+        RowBox[{"diagnosticKey", "<>", "\"\<_Mean\>\""}]}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"rows", "=", 
+        RowBox[{"Select", "[", 
+         RowBox[{"binnedRows", ",", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"#", "[", "\"\<GraphName\>\"", "]"}], "==", "graphName"}],
+            "&"}]}], "]"}]}], ";", "\[IndentingNewLine]", 
+       RowBox[{"SortBy", "[", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"(", 
+           RowBox[{
+            RowBox[{"{", 
+             RowBox[{
+              RowBox[{"#", "[", "\"\<RadiusMean\>\"", "]"}], ",", 
+              RowBox[{"#", "[", "key", "]"}]}], "}"}], "&"}], ")"}], "/@", 
+          "rows"}], ",", "First"}], "]"}]}]}], "]"}]}], ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"correlationSafeLocal", "[", 
+     RowBox[{"x_List", ",", "y_List"}], "]"}], ":=", 
+    RowBox[{"Module", "[", 
+     RowBox[{
+      RowBox[{"{", "pairs", "}"}], ",", 
+      RowBox[{
+       RowBox[{"pairs", "=", 
+        RowBox[{"Select", "[", 
+         RowBox[{
+          RowBox[{"Transpose", "[", 
+           RowBox[{"{", 
+            RowBox[{"x", ",", "y"}], "}"}], "]"}], ",", 
+          RowBox[{
+           RowBox[{"VectorQ", "[", 
+            RowBox[{"#", ",", "NumericQ"}], "]"}], "&"}]}], "]"}]}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"If", "[", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"Length", "[", "pairs", "]"}], ">=", "3"}], ",", 
+         RowBox[{"N", "[", 
+          RowBox[{"Correlation", "[", 
+           RowBox[{
+            RowBox[{"pairs", "[", 
+             RowBox[{"[", 
+              RowBox[{"All", ",", "1"}], "]"}], "]"}], ",", 
+            RowBox[{"pairs", "[", 
+             RowBox[{"[", 
+              RowBox[{"All", ",", "2"}], "]"}], "]"}]}], "]"}], "]"}], ",", 
+         RowBox[{"Missing", "[", "\"\<TooFewPoints\>\"", "]"}]}], "]"}]}]}], 
+     "]"}]}], ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"corrWithRadiusFromBinnedRows", "[", 
+     RowBox[{
+     "binnedRows_List", ",", "graphName_String", ",", 
+      "diagnosticKey_String"}], "]"}], ":=", 
+    RowBox[{"Module", "[", 
+     RowBox[{
+      RowBox[{"{", "profile", "}"}], ",", 
+      RowBox[{
+       RowBox[{"profile", "=", 
+        RowBox[{"getProfileFromBinnedRows", "[", 
+         RowBox[{"binnedRows", ",", "graphName", ",", "diagnosticKey"}], 
+         "]"}]}], ";", "\[IndentingNewLine]", 
+       RowBox[{"correlationSafeLocal", "[", 
+        RowBox[{
+         RowBox[{"profile", "[", 
+          RowBox[{"[", 
+           RowBox[{"All", ",", "1"}], "]"}], "]"}], ",", 
+         RowBox[{"profile", "[", 
+          RowBox[{"[", 
+           RowBox[{"All", ",", "2"}], "]"}], "]"}]}], "]"}]}]}], "]"}]}], 
+   ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"gapTableFromBinnedRows", "[", 
+    RowBox[{
+    "binnedRows_List", ",", "bhName_String", ",", "flatName_String", ",", 
+     "diagnosticKeys_List"}], "]"}], ":=", 
+   RowBox[{"Table", "[", 
+    RowBox[{
+     RowBox[{"With", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"bhCorr", "=", 
+          RowBox[{"corrWithRadiusFromBinnedRows", "[", 
+           RowBox[{"binnedRows", ",", "bhName", ",", "key"}], "]"}]}], ",", 
+         RowBox[{"flatCorr", "=", 
+          RowBox[{"corrWithRadiusFromBinnedRows", "[", 
+           RowBox[{"binnedRows", ",", "flatName", ",", "key"}], "]"}]}]}], 
+        "}"}], ",", 
+       RowBox[{"<|", 
+        RowBox[{
+         RowBox[{"\"\<Geometry\>\"", "->", "bhName"}], ",", 
+         RowBox[{"\"\<Control\>\"", "->", "flatName"}], ",", 
+         RowBox[{"\"\<Diagnostic\>\"", "->", "key"}], ",", 
+         RowBox[{"\"\<BHCorrR\>\"", "->", "bhCorr"}], ",", 
+         RowBox[{"\"\<FlatCorrR\>\"", "->", "flatCorr"}], ",", 
+         RowBox[{"\"\<Gap\>\"", "->", 
+          RowBox[{"N", "[", 
+           RowBox[{"bhCorr", "-", "flatCorr"}], "]"}]}], ",", 
+         RowBox[{"\"\<AbsGap\>\"", "->", 
+          RowBox[{"N", "[", 
+           RowBox[{"Abs", "[", 
+            RowBox[{"bhCorr", "-", "flatCorr"}], "]"}], "]"}]}]}], "|>"}]}], 
+      "]"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"key", ",", "diagnosticKeys"}], "}"}]}], "]"}]}], 
+  ";"}]}], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"rgSweepValues", "=", 
+    RowBox[{"{", 
+     RowBox[{"2", ",", "3", ",", "4", ",", "5"}], "}"}]}], ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"rgSweepMaxRefsPerBin", "=", "20"}], ";"}], "\[IndentingNewLine]", 
+  RowBox[{"(*", 
+   RowBox[{
+    RowBox[{"For", " ", "final", " ", "run"}], ",", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"use", ":", "rgSweepMaxRefsPerBin"}], "=", "All"}], ";"}]}], 
+   "*)"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"bhSchwarzschild", "=", 
+    RowBox[{"SelectFirst", "[", 
+     RowBox[{"allGraphData", ",", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"#", "[", "\"\<Name\>\"", "]"}], 
+        "==", "\"\<SchwarzschildFlamm\>\""}], "&"}]}], "]"}]}], ";"}], 
+  "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"flatSchwarzschildOriginal", "=", 
+    RowBox[{"SelectFirst", "[", 
+     RowBox[{"allGraphData", ",", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"#", "[", "\"\<Name\>\"", "]"}], 
+        "==", "\"\<SchwarzschildFlamm_matchedFlatOriginal\>\""}], "&"}]}], 
+     "]"}]}], ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"diagnosticsForRGSweep", "=", 
+   RowBox[{"{", 
+    RowBox[{"\"\<CLog\>\"", ",", "\"\<MeanLogShellSize\>\"", 
+     ",", "\"\<MeanLogMultiplicityByShell\>\"", ",", "\"\<Degree\>\"", 
+     ",", "\"\<ClusteringCoefficient\>\""}], "}"}]}], ";"}]}], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"ClearAll", "[", "runRGSweepOne", "]"}], ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"runRGSweepOne", "[", "rg_Integer", "]"}], ":=", 
+    RowBox[{"Module", "[", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"bhRows", ",", "flatRows", ",", "binnedRows", ",", "gapRows"}],
+        "}"}], ",", 
+      RowBox[{
+       RowBox[{"Print", "[", 
+        RowBox[{"\"\<Running r_g = \>\"", ",", "rg"}], "]"}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"bhRows", "=", 
+        RowBox[{"diagnosticsForGraphAtRG", "[", 
+         RowBox[{
+         "bhSchwarzschild", ",", "nRadialBins", ",", "rgSweepMaxRefsPerBin", ",",
+           "rg"}], "]"}]}], ";", "\[IndentingNewLine]", 
+       RowBox[{"flatRows", "=", 
+        RowBox[{"diagnosticsForGraphAtRG", "[", 
+         RowBox[{
+         "flatSchwarzschildOriginal", ",", "nRadialBins", ",", 
+          "rgSweepMaxRefsPerBin", ",", "rg"}], "]"}]}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"binnedRows", "=", 
+        RowBox[{"numericizeRows", "[", 
+         RowBox[{"aggregateRowsByGraphAndBin", "[", 
+          RowBox[{"Join", "[", 
+           RowBox[{"bhRows", ",", "flatRows"}], "]"}], "]"}], "]"}]}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"gapRows", "=", 
+        RowBox[{"gapTableFromBinnedRows", "[", 
+         RowBox[{
+         "binnedRows", ",", "\"\<SchwarzschildFlamm\>\"", 
+          ",", "\"\<SchwarzschildFlamm_matchedFlatOriginal\>\"", ",", 
+          "diagnosticsForRGSweep"}], "]"}]}], ";", "\[IndentingNewLine]", 
+       RowBox[{"Export", "[", 
+        RowBox[{
+         RowBox[{"FileNameJoin", "[", 
+          RowBox[{"{", 
+           RowBox[{"extraDir", ",", 
+            RowBox[{"\"\<rg_sweep_binned_rows_rg\>\"", "<>", 
+             RowBox[{"ToString", "[", "rg", "]"}], "<>", "\"\<.csv\>\""}]}], 
+           "}"}], "]"}], ",", "binnedRows"}], "]"}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"Export", "[", 
+        RowBox[{
+         RowBox[{"FileNameJoin", "[", 
+          RowBox[{"{", 
+           RowBox[{"extraDir", ",", 
+            RowBox[{"\"\<rg_sweep_gap_rows_rg\>\"", "<>", 
+             RowBox[{"ToString", "[", "rg", "]"}], "<>", "\"\<.csv\>\""}]}], 
+           "}"}], "]"}], ",", "gapRows"}], "]"}], ";", "\[IndentingNewLine]", 
+       RowBox[{
+        RowBox[{
+         RowBox[{"Append", "[", 
+          RowBox[{"#", ",", 
+           RowBox[{"\"\<GraphShellRadius\>\"", "->", "rg"}]}], "]"}], "&"}], "/@",
+         "gapRows"}]}]}], "]"}]}], ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"rgSweepGapTable", "=", 
+    RowBox[{"Flatten", "[", 
+     RowBox[{
+      RowBox[{"runRGSweepOne", "/@", "rgSweepValues"}], ",", "1"}], "]"}]}], 
+   ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Dataset", "[", "rgSweepGapTable", "]"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"Export", "[", 
+    RowBox[{
+     RowBox[{"FileNameJoin", "[", 
+      RowBox[{"{", 
+       RowBox[{
+       "extraDir", 
+        ",", "\"\<rg_sweep_gap_table_schwarzschild_original_control.csv\>\""}]\
+, "}"}], "]"}], ",", "rgSweepGapTable"}], "]"}], ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Export", "[", 
+   RowBox[{
+    RowBox[{"FileNameJoin", "[", 
+     RowBox[{"{", 
+      RowBox[{
+      "extraDir", 
+       ",", "\"\<rg_sweep_gap_table_schwarzschild_original_control.mx\>\""}], 
+      "}"}], "]"}], ",", "rgSweepGapTable"}], "]"}], ";"}]}], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"rgSweepCLogOnly", "=", 
+    RowBox[{"Select", "[", 
+     RowBox[{"rgSweepGapTable", ",", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"#", "[", "\"\<Diagnostic\>\"", "]"}], "==", "\"\<CLog\>\""}],
+        "&"}]}], "]"}]}], ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Dataset", "[", "rgSweepCLogOnly", "]"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Export", "[", 
+   RowBox[{
+    RowBox[{"FileNameJoin", "[", 
+     RowBox[{"{", 
+      RowBox[{"extraDir", ",", "\"\<rg_sweep_CLog_only.csv\>\""}], "}"}], 
+     "]"}], ",", "rgSweepCLogOnly"}], "]"}], ";"}]}], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"ClearAll", "[", "makeFlatMatchedDataRadiusThreshold", "]"}], 
+   ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+   "makeFlatMatchedDataRadiusThreshold", "[", "curvedData_Association", "]"}],
+    ":=", 
+   RowBox[{"Module", "[", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{
+      "name", ",", "vertices", ",", "radiusAssociation", ",", 
+       "phiAssociation", ",", "radii", ",", "phis", ",", "pts", ",", 
+       "coordinateAssociation", ",", "eps", ",", "graph"}], "}"}], ",", 
+     RowBox[{
+      RowBox[{"name", "=", 
+       RowBox[{
+        RowBox[{"curvedData", "[", "\"\<Name\>\"", "]"}], 
+        "<>", "\"\<_matchedFlatStrictRadius\>\""}]}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"radiusAssociation", "=", 
+       RowBox[{"curvedData", "[", "\"\<RadiusAssociation\>\"", "]"}]}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"phiAssociation", "=", 
+       RowBox[{"curvedData", "[", "\"\<PhiAssociation\>\"", "]"}]}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"vertices", "=", 
+       RowBox[{"Keys", "[", "radiusAssociation", "]"}]}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"radii", "=", 
+       RowBox[{"Lookup", "[", 
+        RowBox[{"radiusAssociation", ",", "vertices"}], "]"}]}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"phis", "=", 
+       RowBox[{"Lookup", "[", 
+        RowBox[{"phiAssociation", ",", "vertices"}], "]"}]}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"pts", "=", 
+       RowBox[{"MapThread", "[", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"#1", " ", 
+             RowBox[{"Cos", "[", "#2", "]"}]}], ",", 
+            RowBox[{"#1", " ", 
+             RowBox[{"Sin", "[", "#2", "]"}]}], ",", "0.0"}], "}"}], "&"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"radii", ",", "phis"}], "}"}]}], "]"}]}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"coordinateAssociation", "=", 
+       RowBox[{"AssociationThread", "[", 
+        RowBox[{"vertices", "->", "pts"}], "]"}]}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"eps", "=", 
+       RowBox[{"distanceMatrixRadius", "[", 
+        RowBox[{"pts", ",", "kNN", ",", "epsilonFactor"}], "]"}]}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"graph", "=", 
+       RowBox[{"makeGeometricGraph", "[", 
+        RowBox[{"pts", ",", "eps"}], "]"}]}], ";", "\[IndentingNewLine]", 
+      RowBox[{"<|", 
+       RowBox[{
+        RowBox[{"\"\<Name\>\"", "->", "name"}], ",", 
+        RowBox[{"\"\<Graph\>\"", "->", "graph"}], ",", 
+        RowBox[{"\"\<Points\>\"", "->", "pts"}], ",", 
+        RowBox[{"\"\<RadiusAssociation\>\"", "->", "radiusAssociation"}], ",", 
+        RowBox[{"\"\<PhiAssociation\>\"", "->", "phiAssociation"}], ",", 
+        RowBox[{"\"\<CoordinateAssociation\>\"", "->", 
+         "coordinateAssociation"}], ",", 
+        RowBox[{"\"\<GraphConstruction\>\"", 
+         "->", "\"\<matchedFlatStrictRadiusThreshold\>\""}], ",", 
+        RowBox[{"\"\<GraphK\>\"", "->", "kNN"}], ",", 
+        RowBox[{"\"\<GraphEpsilon\>\"", "->", "eps"}], ",", 
+        RowBox[{"\"\<EpsilonFactor\>\"", "->", "epsilonFactor"}], ",", 
+        RowBox[{"\"\<Sampling\>\"", "->", "\"\<sameRphiAsCurved\>\""}]}], 
+       "|>"}]}]}], "]"}]}], ";"}]}], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"flatSchwarzschildStrict", "=", 
+    RowBox[{
+    "makeFlatMatchedDataRadiusThreshold", "[", "bhSchwarzschild", "]"}]}], 
+   ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"strictControlGraphSummary", "=", 
+    RowBox[{"Table", "[", 
+     RowBox[{
+      RowBox[{"With", "[", 
+       RowBox[{
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"g", "=", 
+           RowBox[{"data", "[", "\"\<Graph\>\"", "]"}]}], ",", 
+          RowBox[{"degs", "=", 
+           RowBox[{"VertexDegree", "[", 
+            RowBox[{"data", "[", "\"\<Graph\>\"", "]"}], "]"}]}]}], "}"}], ",", 
+        RowBox[{"<|", 
+         RowBox[{
+          RowBox[{"\"\<Name\>\"", "->", 
+           RowBox[{"data", "[", "\"\<Name\>\"", "]"}]}], ",", 
+          RowBox[{"\"\<Construction\>\"", "->", 
+           RowBox[{"data", "[", "\"\<GraphConstruction\>\"", "]"}]}], ",", 
+          RowBox[{"\"\<k\>\"", "->", 
+           RowBox[{"data", "[", "\"\<GraphK\>\"", "]"}]}], ",", 
+          RowBox[{"\"\<Epsilon\>\"", "->", 
+           RowBox[{"data", "[", "\"\<GraphEpsilon\>\"", "]"}]}], ",", 
+          RowBox[{"\"\<EpsilonFactor\>\"", "->", 
+           RowBox[{"data", "[", "\"\<EpsilonFactor\>\"", "]"}]}], ",", 
+          RowBox[{"\"\<Vertices\>\"", "->", 
+           RowBox[{"VertexCount", "[", "g", "]"}]}], ",", 
+          RowBox[{"\"\<Edges\>\"", "->", 
+           RowBox[{"EdgeCount", "[", "g", "]"}]}], ",", 
+          RowBox[{"\"\<ConnectedQ\>\"", "->", 
+           RowBox[{"ConnectedGraphQ", "[", "g", "]"}]}], ",", 
+          RowBox[{"\"\<MeanDegree\>\"", "->", 
+           RowBox[{"N", "[", 
+            RowBox[{"Mean", "[", "degs", "]"}], "]"}]}], ",", 
+          RowBox[{"\"\<MinDegree\>\"", "->", 
+           RowBox[{"Min", "[", "degs", "]"}]}], ",", 
+          RowBox[{"\"\<MaxDegree\>\"", "->", 
+           RowBox[{"Max", "[", "degs", "]"}]}], ",", 
+          RowBox[{"\"\<EdgeDensity\>\"", "->", 
+           RowBox[{"N", "[", 
+            RowBox[{"GraphDensity", "[", "g", "]"}], "]"}]}]}], "|>"}]}], 
+       "]"}], ",", 
+      RowBox[{"{", 
+       RowBox[{"data", ",", 
+        RowBox[{"{", 
+         RowBox[{
+         "bhSchwarzschild", ",", "flatSchwarzschildOriginal", ",", 
+          "flatSchwarzschildStrict"}], "}"}]}], "}"}]}], "]"}]}], ";"}], 
+  "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Dataset", "[", "strictControlGraphSummary", "]"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Export", "[", 
+   RowBox[{
+    RowBox[{"FileNameJoin", "[", 
+     RowBox[{"{", 
+      RowBox[{
+      "extraDir", 
+       ",", "\"\<strict_control_graph_summary_schwarzschild.csv\>\""}], "}"}],
+      "]"}], ",", "strictControlGraphSummary"}], "]"}], ";"}]}], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"sensitivityRG", "=", "3"}], ";"}], "\[IndentingNewLine]"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"sensitivityMaxRefsPerBin", "=", "All"}], ";"}], 
+  "\[IndentingNewLine]", 
+  RowBox[{"(*", 
+   RowBox[{
+    RowBox[{"For", " ", "final", " ", "run"}], ",", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"use", ":", "sensitivityMaxRefsPerBin"}], "=", "All"}], ";"}]}],
+    "*)"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"ClearAll", "[", "runPairSensitivity", "]"}], ";"}], 
+  "\[IndentingNewLine]"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"runPairSensitivity", "[", 
+     RowBox[{"flatData_Association", ",", "protocolLabel_String"}], "]"}], ":=", 
+    RowBox[{"Module", "[", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"bhRows", ",", "flatRows", ",", "binnedRows", ",", "gapRows"}],
+        "}"}], ",", 
+      RowBox[{
+       RowBox[{"Print", "[", 
+        RowBox[{"\"\<Running protocol: \>\"", ",", "protocolLabel"}], "]"}], ";",
+        "\[IndentingNewLine]", 
+       RowBox[{"bhRows", "=", 
+        RowBox[{"diagnosticsForGraphAtRG", "[", 
+         RowBox[{
+         "bhSchwarzschild", ",", "nRadialBins", ",", 
+          "sensitivityMaxRefsPerBin", ",", "sensitivityRG"}], "]"}]}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"flatRows", "=", 
+        RowBox[{"diagnosticsForGraphAtRG", "[", 
+         RowBox[{
+         "flatData", ",", "nRadialBins", ",", "sensitivityMaxRefsPerBin", ",",
+           "sensitivityRG"}], "]"}]}], ";", "\[IndentingNewLine]", 
+       RowBox[{"binnedRows", "=", 
+        RowBox[{"numericizeRows", "[", 
+         RowBox[{"aggregateRowsByGraphAndBin", "[", 
+          RowBox[{"Join", "[", 
+           RowBox[{"bhRows", ",", "flatRows"}], "]"}], "]"}], "]"}]}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"gapRows", "=", 
+        RowBox[{"gapTableFromBinnedRows", "[", 
+         RowBox[{"binnedRows", ",", "\"\<SchwarzschildFlamm\>\"", ",", 
+          RowBox[{"flatData", "[", "\"\<Name\>\"", "]"}], ",", 
+          "diagnosticsForRGSweep"}], "]"}]}], ";", "\[IndentingNewLine]", 
+       RowBox[{"Export", "[", 
+        RowBox[{
+         RowBox[{"FileNameJoin", "[", 
+          RowBox[{"{", 
+           RowBox[{"extraDir", ",", 
+            
+            RowBox[{"\"\<sensitivity_binned_rows_\>\"", "<>", "protocolLabel",
+              "<>", "\"\<.csv\>\""}]}], "}"}], "]"}], ",", "binnedRows"}], 
+        "]"}], ";", "\[IndentingNewLine]", 
+       RowBox[{
+        RowBox[{
+         RowBox[{"Append", "[", 
+          RowBox[{"#", ",", 
+           RowBox[{"\"\<Protocol\>\"", "->", "protocolLabel"}]}], "]"}], 
+         "&"}], "/@", "gapRows"}]}]}], "]"}]}], ";"}], 
+  "\[IndentingNewLine]"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"sensitivityOriginalRows", "=", 
+    RowBox[{"runPairSensitivity", "[", 
+     RowBox[{
+     "flatSchwarzschildOriginal", ",", "\"\<originalMatchedFlatKNN\>\""}], 
+     "]"}]}], ";"}], "\[IndentingNewLine]"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"sensitivityStrictRows", "=", 
+    RowBox[{"runPairSensitivity", "[", 
+     RowBox[{
+     "flatSchwarzschildStrict", ",", "\"\<strictRadiusMatchedFlat\>\""}], 
+     "]"}]}], ";"}], "\[IndentingNewLine]"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"sensitivityControlTable", "=", 
+    RowBox[{"Join", "[", 
+     RowBox[{"sensitivityOriginalRows", ",", "sensitivityStrictRows"}], 
+     "]"}]}], ";"}], "\[IndentingNewLine]"}], "\n", 
+ RowBox[{
+  RowBox[{"Dataset", "[", "sensitivityControlTable", "]"}], 
+  "\[IndentingNewLine]"}], "\n", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"Export", "[", 
+    RowBox[{
+     RowBox[{"FileNameJoin", "[", 
+      RowBox[{"{", 
+       RowBox[{
+       "extraDir", 
+        ",", "\"\<control_protocol_sensitivity_table_schwarzschild.csv\>\""}],
+        "}"}], "]"}], ",", "sensitivityControlTable"}], "]"}], ";"}], 
+  "\[IndentingNewLine]"}], "\n", 
+ RowBox[{
+  RowBox[{"Export", "[", 
+   RowBox[{
+    RowBox[{"FileNameJoin", "[", 
+     RowBox[{"{", 
+      RowBox[{
+      "extraDir", 
+       ",", "\"\<control_protocol_sensitivity_table_schwarzschild.mx\>\""}], 
+      "}"}], "]"}], ",", "sensitivityControlTable"}], "]"}], ";"}]}], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"sensitivityCLogOnly", "=", 
+    RowBox[{"Select", "[", 
+     RowBox[{"sensitivityControlTable", ",", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"#", "[", "\"\<Diagnostic\>\"", "]"}], "==", "\"\<CLog\>\""}],
+        "&"}]}], "]"}]}], ";"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Dataset", "[", "sensitivityCLogOnly", "]"}], "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Export", "[", 
+   RowBox[{
+    RowBox[{"FileNameJoin", "[", 
+     RowBox[{"{", 
+      RowBox[{
+      "extraDir", ",", "\"\<control_protocol_sensitivity_CLog_only.csv\>\""}],
+       "}"}], "]"}], ",", "sensitivityCLogOnly"}], "]"}], ";"}]}], "Input"]
+},
+ WindowTitle->"Original matched-flat control Step 4 (clean)",
+ StyleDefinitions->"Default.nb"]
