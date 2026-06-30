@@ -12,9 +12,7 @@ The main diagnostic is `CLog`, a graph-shell statistic based on the dispersion o
 │   └── original_matched_flat_control_step4_clean.nb
 ├── scripts/
 │   └── original_matched_flat_control_step4_clean.wl
-├── results/
-│   ├── figures/
-│   └── tables/
+├── step4_outputs_originalMatchedFlatControl_randomN1000_k16_epsFactor1p15_rg3/
 ├── README.md
 └── .gitignore
 ```
