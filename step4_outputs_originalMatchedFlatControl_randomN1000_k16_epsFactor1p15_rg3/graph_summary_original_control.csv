@@ -1,0 +1,8 @@
+"{Name : SchwarzschildFlamm, Construction : radiusThresholdOriginal, k : 16, Epsilon : 1.8532591117687602, EpsilonFactor : 1.15, Vertices : 1000, Edges : 10236, ConnectedQ : True}"
+"{Name : ReissnerNordstrom, Construction : radiusThresholdOriginal, k : 16, Epsilon : 1.8471182540877036, EpsilonFactor : 1.15, Vertices : 1000, Edges : 10289, ConnectedQ : True}"
+"{Name : Bardeen, Construction : radiusThresholdOriginal, k : 16, Epsilon : 1.8481624101424239, EpsilonFactor : 1.15, Vertices : 1000, Edges : 10284, ConnectedQ : True}"
+"{Name : Hayward, Construction : radiusThresholdOriginal, k : 16, Epsilon : 1.8511147287228982, EpsilonFactor : 1.15, Vertices : 1000, Edges : 10262, ConnectedQ : True}"
+"{Name : SchwarzschildFlamm_matchedFlatOriginal, Construction : matchedFlatOriginalKNN, k : 16, Epsilon : , EpsilonFactor : , Vertices : 1000, Edges : 9087, ConnectedQ : True}"
+"{Name : ReissnerNordstrom_matchedFlatOriginal, Construction : matchedFlatOriginalKNN, k : 16, Epsilon : , EpsilonFactor : , Vertices : 1000, Edges : 9087, ConnectedQ : True}"
+"{Name : Bardeen_matchedFlatOriginal, Construction : matchedFlatOriginalKNN, k : 16, Epsilon : , EpsilonFactor : , Vertices : 1000, Edges : 9087, ConnectedQ : True}"
+"{Name : Hayward_matchedFlatOriginal, Construction : matchedFlatOriginalKNN, k : 16, Epsilon : , EpsilonFactor : , Vertices : 1000, Edges : 9087, ConnectedQ : True}"

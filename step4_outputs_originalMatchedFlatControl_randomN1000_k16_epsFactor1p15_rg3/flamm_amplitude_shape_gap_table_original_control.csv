@@ -1,0 +1,5 @@
+"{Diagnostic : CLog, MeanAbsProfileGap : 0.12947069195030875, StandardizedProfileGap : 1.2950819260139685, BHFlatShapeCorrelation : 0.16122689577557783}"
+"{Diagnostic : MeanLogShellSize, MeanAbsProfileGap : 0.22915148671438723, StandardizedProfileGap : 0.6879256953013425, BHFlatShapeCorrelation : 0.8480162130632601}"
+"{Diagnostic : MeanLogMultiplicityByShell, MeanAbsProfileGap : 0.3322379030576119, StandardizedProfileGap : 1.4135198380687548, BHFlatShapeCorrelation : -0.49626151039872785}"
+"{Diagnostic : Degree, MeanAbsProfileGap : 5.1423171182554155, StandardizedProfileGap : 1.1615923343961483, BHFlatShapeCorrelation : 0.2914639182176775}"
+"{Diagnostic : ClusteringCoefficient, MeanAbsProfileGap : 0.02240349062140305, StandardizedProfileGap : 0.5201636677679186, BHFlatShapeCorrelation : 0.838323607478097}"

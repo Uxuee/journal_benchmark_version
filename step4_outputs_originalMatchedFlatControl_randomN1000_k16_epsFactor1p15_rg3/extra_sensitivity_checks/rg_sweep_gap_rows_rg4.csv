@@ -1,0 +1,5 @@
+"{Geometry : SchwarzschildFlamm, Control : SchwarzschildFlamm_matchedFlatOriginal, Diagnostic : CLog, BHCorrR : -0.970233755277778, FlatCorrR : -0.0832077088226506, Gap : -0.8870260464551274, AbsGap : 0.8870260464551274}"
+"{Geometry : SchwarzschildFlamm, Control : SchwarzschildFlamm_matchedFlatOriginal, Diagnostic : MeanLogShellSize, BHCorrR : -0.9277700769618958, FlatCorrR : -0.7461703342113896, Gap : -0.18159974275050628, AbsGap : 0.18159974275050628}"
+"{Geometry : SchwarzschildFlamm, Control : SchwarzschildFlamm_matchedFlatOriginal, Diagnostic : MeanLogMultiplicityByShell, BHCorrR : -0.9704957043324798, FlatCorrR : 0.5538257062688285, Gap : -1.5243214106013083, AbsGap : 1.5243214106013083}"
+"{Geometry : SchwarzschildFlamm, Control : SchwarzschildFlamm_matchedFlatOriginal, Diagnostic : Degree, BHCorrR : -0.950234712492843, FlatCorrR : -0.1934825041725715, Gap : -0.7567522083202715, AbsGap : 0.7567522083202715}"
+"{Geometry : SchwarzschildFlamm, Control : SchwarzschildFlamm_matchedFlatOriginal, Diagnostic : ClusteringCoefficient, BHCorrR : 0.12629968722666063, FlatCorrR : 0.4725446208257123, Gap : -0.3462449335990517, AbsGap : 0.3462449335990517}"
